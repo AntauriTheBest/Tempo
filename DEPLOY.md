@@ -53,7 +53,7 @@ sudo systemctl enable nginx
 
 ```bash
 cd /var/www
-sudo git clone https://github.com/TU_USUARIO/TU_REPO.git tempoalfa
+sudo git clone https://github.com/AntauriTheBest/Tempo.git tempoalfa
 sudo chown -R $USER:$USER tempoalfa
 cd tempoalfa
 ```
