@@ -31,9 +31,9 @@ sudo systemctl start postgresql
 
 # Crear base de datos y usuario
 sudo -u postgres psql <<EOF
-CREATE USER tempoalfa WITH PASSWORD 'TuPasswordSegura123';
-CREATE DATABASE tempoalfa_prod OWNER tempoalfa;
-GRANT ALL PRIVILEGES ON DATABASE tempoalfa_prod TO tempoalfa;
+CREATE USER tempo WITH PASSWORD 'TuPasswordSegura123';
+CREATE DATABASE tempo_prod OWNER tempo;
+GRANT ALL PRIVILEGES ON DATABASE tempo_prod TO tempo;
 EOF
 ```
 
@@ -53,9 +53,9 @@ sudo systemctl enable nginx
 
 ```bash
 cd /var/www
-sudo git clone https://github.com/AntauriTheBest/Tempo.git tempoalfa
-sudo chown -R $USER:$USER tempoalfa
-cd tempoalfa
+sudo git clone https://github.com/AntauriTheBest/Tempo.git tempo
+sudo chown -R $USER:$USER tempo
+cd tempo
 ```
 
 O si subes el código desde tu PC con rsync:
@@ -64,7 +64,7 @@ O si subes el código desde tu PC con rsync:
 # Ejecutar desde tu PC (Git Bash o WSL)
 rsync -avz --exclude node_modules --exclude .git \
   "ruta/al/proyecto/" \
-  usuario@IP_SERVIDOR:/var/www/tempoalfa/
+  usuario@IP_SERVIDOR:/var/www/tempo/
 ```
 
 ---
@@ -72,7 +72,7 @@ rsync -avz --exclude node_modules --exclude .git \
 ## 6. Variables de entorno del API
 
 ```bash
-cd /var/www/tempoalfa/apps/api
+cd /var/www/tempo/apps/api
 nano .env
 ```
 
@@ -81,11 +81,11 @@ Contenido:
 ```env
 NODE_ENV=production
 PORT=3001
-DATABASE_URL=postgresql://tempoalfa:TuPasswordSegura123@127.0.0.1:5432/tempoalfa_prod
+DATABASE_URL=postgresql://tempo:TuPasswordSegura123@127.0.0.1:5432/tempo_prod
 JWT_SECRET=GENERA_UNO_CON_EL_COMANDO_DE_ABAJO
 JWT_ACCESS_EXPIRY=15m
 JWT_REFRESH_EXPIRY=7d
-UPLOADS_DIR=/var/www/tempoalfa/uploads
+UPLOADS_DIR=/var/www/tempo/uploads
 MAX_FILE_SIZE_MB=10
 FRONTEND_URL=https://tudominio.com
 
@@ -108,7 +108,7 @@ node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 ## 7. Variables de entorno del frontend
 
 ```bash
-cd /var/www/tempoalfa/apps/web
+cd /var/www/tempo/apps/web
 nano .env.production
 ```
 
@@ -123,7 +123,7 @@ VITE_API_URL=https://tudominio.com/api
 ## 8. Instalar dependencias y preparar la base de datos
 
 ```bash
-cd /var/www/tempoalfa
+cd /var/www/tempo
 
 # Instalar dependencias del monorepo
 npm install
@@ -142,7 +142,7 @@ npx tsx prisma/seed.ts
 ## 9. Compilar el frontend
 
 ```bash
-cd /var/www/tempoalfa
+cd /var/www/tempo
 npm run build --workspace=apps/web
 # El output queda en apps/web/dist/
 ```
@@ -153,11 +153,11 @@ npm run build --workspace=apps/web
 
 ```bash
 # Crear archivo de configuración PM2
-cat > /var/www/tempoalfa/ecosystem.config.js << 'EOF'
+cat > /var/www/tempo/ecosystem.config.js << 'EOF'
 module.exports = {
   apps: [{
-    name: 'tempoalfa-api',
-    cwd: '/var/www/tempoalfa/apps/api',
+    name: 'tempo-api',
+    cwd: '/var/www/tempo/apps/api',
     script: 'npx',
     args: 'tsx src/server.ts',
     env: { NODE_ENV: 'production' },
@@ -167,7 +167,7 @@ module.exports = {
 }
 EOF
 
-pm2 start /var/www/tempoalfa/ecosystem.config.js
+pm2 start /var/www/tempo/ecosystem.config.js
 pm2 save
 pm2 startup   # sigue las instrucciones que imprime
 ```
@@ -176,7 +176,7 @@ Verificar que está corriendo:
 
 ```bash
 pm2 status
-pm2 logs tempoalfa-api --lines 20
+pm2 logs tempo-api --lines 20
 curl http://localhost:3001/api/health
 ```
 
@@ -185,7 +185,7 @@ curl http://localhost:3001/api/health
 ## 11. Configurar Nginx
 
 ```bash
-sudo nano /etc/nginx/sites-available/tempoalfa
+sudo nano /etc/nginx/sites-available/tempo
 ```
 
 Contenido:
@@ -196,12 +196,12 @@ server {
     server_name tudominio.com www.tudominio.com;
 
     # Frontend (archivos estáticos)
-    root /var/www/tempoalfa/apps/web/dist;
+    root /var/www/tempo/apps/web/dist;
     index index.html;
 
     # Uploads
     location /uploads/ {
-        alias /var/www/tempoalfa/uploads/;
+        alias /var/www/tempo/uploads/;
     }
 
     # API → proxy al backend
@@ -225,7 +225,7 @@ server {
 ```
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/tempoalfa /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/tempo /etc/nginx/sites-enabled/
 sudo nginx -t          # verificar sintaxis
 sudo systemctl reload nginx
 ```
@@ -245,8 +245,8 @@ sudo systemctl reload nginx
 ## 13. Carpeta de uploads
 
 ```bash
-mkdir -p /var/www/tempoalfa/uploads
-chmod 755 /var/www/tempoalfa/uploads
+mkdir -p /var/www/tempo/uploads
+chmod 755 /var/www/tempo/uploads
 ```
 
 ---
@@ -267,7 +267,7 @@ sudo ufw enable
 ```bash
 curl https://tudominio.com/api/health   # debe devolver { "status": "ok" }
 curl -I https://tudominio.com           # debe devolver 200
-pm2 logs tempoalfa-api                  # logs en tiempo real
+pm2 logs tempo-api                  # logs en tiempo real
 ```
 
 ---
@@ -275,11 +275,11 @@ pm2 logs tempoalfa-api                  # logs en tiempo real
 ## Actualizaciones futuras
 
 ```bash
-cd /var/www/tempoalfa
+cd /var/www/tempo
 git pull
 npm install
 npm run build --workspace=apps/web
-pm2 restart tempoalfa-api
+pm2 restart tempo-api
 ```
 
 Si hubo cambios en el schema de Prisma:
