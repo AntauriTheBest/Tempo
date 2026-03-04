@@ -1,0 +1,405 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ORGANIZACION (TENANT) ====================
+
+enum PlanType {
+  TRIAL
+  PRO
+  ENTERPRISE
+}
+
+enum OrgStatus {
+  TRIALING
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+model Organization {
+  id                   String    @id @default(cuid())
+  name                 String
+  slug                 String    @unique
+  plan                 PlanType  @default(TRIAL)
+  status               OrgStatus @default(TRIALING)
+  trialEndsAt          DateTime
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  currentPeriodEnd     DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  users      User[]
+  tasks      Task[]
+  categories Category[]
+  tags       Tag[]
+  lists      TaskList[]
+  clients    Client[]
+
+  @@map("organizations")
+}
+
+// ==================== AUTH & USERS ====================
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  passwordHash   String
+  name           String
+  avatar         String?
+  phone          String?  @unique
+  role           UserRole @default(USER)
+  isActive       Boolean  @default(true)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tasks               Task[]
+  lists               TaskList[]
+  categories          Category[]
+  tags                Tag[]
+  refreshTokens       RefreshToken[]
+  comments            Comment[]
+  assignments         TaskAssignment[]    @relation("TaskAssignments")
+  invitationTokens    InvitationToken[]
+  passwordResetTokens PasswordResetToken[]
+  timeEntries         TimeEntry[]
+  attachments         Attachment[]
+
+  @@index([organizationId])
+  @@map("users")
+}
+
+model InvitationToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  email     String
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@map("invitation_tokens")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  email     String
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// ==================== CATALOGOS ====================
+
+model Category {
+  id             String   @id @default(cuid())
+  name           String
+  color          String   @default("#6366f1")
+  icon           String?
+  order          Int      @default(0)
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tasks Task[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@index([organizationId])
+  @@map("categories")
+}
+
+model Tag {
+  id             String   @id @default(cuid())
+  name           String
+  color          String   @default("#8b5cf6")
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+
+  tasks TaskTag[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@index([organizationId])
+  @@map("tags")
+}
+
+enum TaskPriority {
+  NONE
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// ==================== CLIENTES ====================
+
+model Client {
+  id             String   @id @default(cuid())
+  name           String
+  color          String   @default("#10b981")
+  contactName    String?
+  contactEmail   String?
+  contactPhone   String?
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  lists          TaskList[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("clients")
+}
+
+// ==================== LISTAS ====================
+
+model TaskList {
+  id             String   @id @default(cuid())
+  name           String
+  description    String?
+  color          String   @default("#3b82f6")
+  icon           String?
+  isPinned       Boolean  @default(false)
+  order          Int      @default(0)
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  clientId       String?
+  client         Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tasks Task[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@index([organizationId])
+  @@index([clientId])
+  @@map("task_lists")
+}
+
+// ==================== TAREAS ====================
+
+model Task {
+  id             String       @id @default(cuid())
+  title          String
+  description    String?
+  status         TaskStatus   @default(PENDING)
+  dueDate        DateTime?
+  completedAt    DateTime?
+  order          Int          @default(0)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Relaciones
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  listId     String?
+  list       TaskList? @relation(fields: [listId], references: [id], onDelete: SetNull)
+  priority   TaskPriority @default(NONE)
+
+  // Subtareas (self-relation)
+  parentId String?
+  parent   Task?   @relation("Subtasks", fields: [parentId], references: [id], onDelete: Cascade)
+  subtasks Task[]  @relation("Subtasks")
+
+  // Recurrencia
+  recurrenceRule  RecurrenceRule? @relation("TaskRecurrence")
+  generatedFromId String?
+  generatedFrom   Task?   @relation("GeneratedInstances", fields: [generatedFromId], references: [id], onDelete: SetNull)
+  generatedTasks  Task[]  @relation("GeneratedInstances")
+  isRecurring     Boolean @default(false)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  estimatedTimeMinutes Int?
+
+  tags        TaskTag[]
+  comments    Comment[]
+  assignments TaskAssignment[]
+  timeEntries TimeEntry[]
+  attachments Attachment[]
+
+  @@index([organizationId, status])
+  @@index([userId, status])
+  @@index([userId, listId])
+  @@index([userId, categoryId])
+  @@index([userId, priority])
+  @@index([userId, dueDate])
+  @@index([generatedFromId])
+  @@map("tasks")
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model TaskTag {
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  tagId  String
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, tagId])
+  @@map("task_tags")
+}
+
+// ==================== ASIGNACIONES ====================
+
+model TaskAssignment {
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation("TaskAssignments", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, userId])
+  @@index([userId])
+  @@map("task_assignments")
+}
+
+// ==================== COMENTARIOS ====================
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([taskId])
+  @@index([userId])
+  @@map("comments")
+}
+
+// ==================== RECURRENCIA ====================
+
+model RecurrenceRule {
+  id             String         @id @default(cuid())
+  taskId         String         @unique
+  task           Task           @relation("TaskRecurrence", fields: [taskId], references: [id], onDelete: Cascade)
+  frequency      RecurrenceFreq
+  interval       Int            @default(1)
+  daysOfWeek     Int[]          @default([])
+  dayOfMonth     Int?
+  monthOfYear    Int?
+  startDate      DateTime
+  endDate        DateTime?
+  maxOccurrences Int?
+  generatedUntil DateTime?
+  isActive       Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@map("recurrence_rules")
+}
+
+enum RecurrenceFreq {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+// ==================== TIME TRACKING ====================
+
+enum TimeEntryType {
+  POMODORO
+  MANUAL
+}
+
+model TimeEntry {
+  id              String        @id @default(cuid())
+  taskId          String
+  task            Task          @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            TimeEntryType @default(POMODORO)
+  durationMinutes Int
+  startedAt       DateTime
+  endedAt         DateTime?
+  createdAt       DateTime      @default(now())
+
+  @@index([taskId, userId])
+  @@index([userId])
+  @@map("time_entries")
+}
+
+// ==================== ADJUNTOS ====================
+
+model Attachment {
+  id           String   @id @default(cuid())
+  taskId       String
+  userId       String
+  filename     String
+  originalName String
+  mimetype     String
+  size         Int
+  createdAt    DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("attachments")
+}
+
+// ==================== APP SETTINGS ====================
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
