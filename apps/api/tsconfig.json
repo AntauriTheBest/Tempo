@@ -4,8 +4,5 @@
     "outDir": "./dist",
     "rootDir": "./src"
   },
-  "include": ["src", "prisma/seed.ts"],
-  "references": [
-    { "path": "../../packages/shared" }
-  ]
+  "include": ["src"]
 }
