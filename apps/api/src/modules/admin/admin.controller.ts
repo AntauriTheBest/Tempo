@@ -4,32 +4,32 @@ import * as adminService from './admin.service';
 export async function handleGetUsers(req: Request, res: Response) {
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 50;
-  const result = await adminService.getUsers(page, limit);
+  const result = await adminService.getUsers(req.user!.organizationId, page, limit);
   res.json({ success: true, ...result });
 }
 
 export async function handleGetUserById(req: Request, res: Response) {
-  const user = await adminService.getUserById(req.params.id);
+  const user = await adminService.getUserById(req.user!.organizationId, req.params.id);
   res.json({ success: true, data: user });
 }
 
 export async function handleInviteUser(req: Request, res: Response) {
-  const result = await adminService.inviteUser(req.body);
+  const result = await adminService.inviteUser(req.user!.organizationId, req.body);
   res.status(201).json({ success: true, data: result });
 }
 
 export async function handleUpdateUser(req: Request, res: Response) {
-  const result = await adminService.updateUser(req.params.id, req.body);
+  const result = await adminService.updateUser(req.user!.organizationId, req.params.id, req.body);
   res.json({ success: true, data: result });
 }
 
 export async function handleResendInvitation(req: Request, res: Response) {
-  const result = await adminService.resendInvitation(req.params.id);
+  const result = await adminService.resendInvitation(req.user!.organizationId, req.params.id);
   res.json({ success: true, data: result });
 }
 
 export async function handleGetAllTasks(req: Request, res: Response) {
-  const result = await adminService.getAllTasks({
+  const result = await adminService.getAllTasks(req.user!.organizationId, {
     status: req.query.status as string,
     userId: req.query.userId as string,
     search: req.query.search as string,
@@ -42,8 +42,8 @@ export async function handleGetAllTasks(req: Request, res: Response) {
   res.json({ success: true, ...result });
 }
 
-export async function handleGetStats(_req: Request, res: Response) {
-  const stats = await adminService.getStats();
+export async function handleGetStats(req: Request, res: Response) {
+  const stats = await adminService.getStats(req.user!.organizationId);
   res.json({ success: true, data: stats });
 }
 

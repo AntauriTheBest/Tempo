@@ -115,7 +115,7 @@ export function Sidebar() {
   return (
     <aside className="flex h-full w-64 flex-col border-r bg-card">
       <div className="p-4">
-        <h1 className="text-lg font-bold text-primary">Todo-List Pro</h1>
+        <h1 className="text-lg font-bold text-primary">Tempo</h1>
       </div>
 
       {/* Trial expiry banner */}

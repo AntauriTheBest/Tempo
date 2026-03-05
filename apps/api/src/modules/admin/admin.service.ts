@@ -7,11 +7,12 @@ import { buildPaginationMeta } from '../../shared';
 import { defaultCategories, defaultLists } from '../../shared/default-data';
 import type { InviteUserRequest, AdminUpdateUserRequest, UserRole } from '@todo-list-pro/shared';
 
-export async function getUsers(page: number = 1, limit: number = 50) {
+export async function getUsers(organizationId: string, page: number = 1, limit: number = 50) {
   const skip = (page - 1) * limit;
 
   const [users, total] = await Promise.all([
     prisma.user.findMany({
+      where: { organizationId },
       orderBy: { createdAt: 'desc' },
       skip,
       take: limit,
@@ -26,7 +27,7 @@ export async function getUsers(page: number = 1, limit: number = 50) {
         updatedAt: true,
       },
     }),
-    prisma.user.count(),
+    prisma.user.count({ where: { organizationId } }),
   ]);
 
   return {
@@ -35,9 +36,9 @@ export async function getUsers(page: number = 1, limit: number = 50) {
   };
 }
 
-export async function getUserById(userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
+export async function getUserById(organizationId: string, userId: string) {
+  const user = await prisma.user.findFirst({
+    where: { id: userId, organizationId },
     select: {
       id: true,
       email: true,
@@ -53,7 +54,7 @@ export async function getUserById(userId: string) {
   return user;
 }
 
-export async function inviteUser(data: InviteUserRequest) {
+export async function inviteUser(organizationId: string, data: InviteUserRequest) {
   const existing = await prisma.user.findUnique({
     where: { email: data.email },
   });
@@ -72,6 +73,7 @@ export async function inviteUser(data: InviteUserRequest) {
         passwordHash: placeholderHash,
         role: (data.role || 'USER') as any,
         isActive: false,
+        organizationId,
       },
     });
 
@@ -121,8 +123,8 @@ export async function inviteUser(data: InviteUserRequest) {
   };
 }
 
-export async function updateUser(userId: string, data: AdminUpdateUserRequest) {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+export async function updateUser(organizationId: string, userId: string, data: AdminUpdateUserRequest) {
+  const user = await prisma.user.findFirst({ where: { id: userId, organizationId } });
   if (!user) throw new AppError(404, 'User not found');
 
   const updated = await prisma.user.update({
@@ -147,8 +149,8 @@ export async function updateUser(userId: string, data: AdminUpdateUserRequest) {
   return updated;
 }
 
-export async function resendInvitation(userId: string) {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+export async function resendInvitation(organizationId: string, userId: string) {
+  const user = await prisma.user.findFirst({ where: { id: userId, organizationId } });
   if (!user) throw new AppError(404, 'User not found');
 
   // Invalidate old tokens
@@ -173,7 +175,7 @@ export async function resendInvitation(userId: string) {
   return { invitationUrl };
 }
 
-export async function getAllTasks(filters: {
+export async function getAllTasks(organizationId: string, filters: {
   status?: string;
   userId?: string;
   search?: string;
@@ -187,7 +189,7 @@ export async function getAllTasks(filters: {
   const limit = filters.limit ?? 50;
   const skip = (page - 1) * limit;
 
-  const where: Prisma.TaskWhereInput = { parentId: null };
+  const where: Prisma.TaskWhereInput = { parentId: null, user: { organizationId } };
 
   if (filters.status) {
     const statuses = filters.status.split(',');
@@ -240,14 +242,14 @@ export async function getAllTasks(filters: {
   };
 }
 
-export async function getStats() {
+export async function getStats(organizationId: string) {
   const [totalUsers, activeUsers, totalTasks, tasksByStatus] = await Promise.all([
-    prisma.user.count(),
-    prisma.user.count({ where: { isActive: true } }),
-    prisma.task.count({ where: { parentId: null } }),
+    prisma.user.count({ where: { organizationId } }),
+    prisma.user.count({ where: { organizationId, isActive: true } }),
+    prisma.task.count({ where: { parentId: null, user: { organizationId } } }),
     prisma.task.groupBy({
       by: ['status'],
-      where: { parentId: null },
+      where: { parentId: null, user: { organizationId } },
       _count: { id: true },
     }),
   ]);

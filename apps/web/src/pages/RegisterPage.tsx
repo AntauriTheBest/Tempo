@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema } from '@todo-list-pro/shared';
 import { z } from 'zod';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -21,8 +21,8 @@ type RegisterForm = z.infer<typeof registerFormSchema>;
 
 export function RegisterPage() {
   const { register: registerUser, isAuthenticated, isLoading } = useAuth();
-  const navigate = useNavigate();
   const [error, setError] = useState('');
+  const [sentTo, setSentTo] = useState('');
 
   const {
     register,
@@ -39,13 +39,13 @@ export function RegisterPage() {
   const onSubmit = async (data: RegisterForm) => {
     setError('');
     try {
-      await registerUser({
+      const result = await registerUser({
         orgName: data.orgName,
         name: data.name,
         email: data.email,
         password: data.password,
       });
-      navigate('/my-tasks');
+      setSentTo(result.email);
     } catch (err: any) {
       setError(
         err.response?.data?.message || 'Error al crear la cuenta. Inténtalo de nuevo.'
@@ -53,11 +53,38 @@ export function RegisterPage() {
     }
   };
 
+  if (sentTo) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/50 p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <CardTitle className="text-2xl">Revisa tu correo</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">
+              Enviamos un enlace de verificación a <strong>{sentTo}</strong>.
+              Haz clic en el enlace para activar tu cuenta.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              ¿No llegó?{' '}
+              <button
+                onClick={() => setSentTo('')}
+                className="text-primary hover:underline"
+              >
+                Volver al registro
+              </button>
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/50 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Todo-List Pro</CardTitle>
+          <CardTitle className="text-2xl">Tempo</CardTitle>
           <p className="text-sm text-muted-foreground">
             Crea tu cuenta y organización
           </p>

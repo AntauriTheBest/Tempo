@@ -16,6 +16,7 @@ export function LoginPage() {
   const { login, isAuthenticated, isLoading, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState('');
+  const [emailNotVerified, setEmailNotVerified] = useState(false);
 
   const {
     register,
@@ -31,13 +32,18 @@ export function LoginPage() {
 
   const onSubmit = async (data: LoginForm) => {
     setError('');
+    setEmailNotVerified(false);
     try {
       const result = await login(data);
       navigate(result.user.role === 'ADMIN' ? '/dashboard' : '/my-tasks');
     } catch (err: any) {
-      setError(
-        err.response?.data?.message || 'Error logging in. Please try again.'
-      );
+      if (err.response?.data?.message === 'EMAIL_NOT_VERIFIED') {
+        setEmailNotVerified(true);
+      } else {
+        setError(
+          err.response?.data?.message || 'Error al iniciar sesión. Inténtalo de nuevo.'
+        );
+      }
     }
   };
 
@@ -45,13 +51,18 @@ export function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/50 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Todo-List Pro</CardTitle>
+          <CardTitle className="text-2xl">Tempo</CardTitle>
           <p className="text-sm text-muted-foreground">
             Inicia sesión en tu cuenta
           </p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {emailNotVerified && (
+              <div className="rounded-md bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
+                Tu correo aún no está verificado. Revisa tu bandeja de entrada y haz clic en el enlace de verificación.
+              </div>
+            )}
             {error && (
               <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
                 {error}

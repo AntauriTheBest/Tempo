@@ -23,10 +23,19 @@ export const authService = {
     name: string;
     email: string;
     password: string;
-  }): Promise<{ user: UserProfile; organization: Organization; tokens: AuthTokens }> {
+  }): Promise<{ requiresVerification: true; email: string }> {
     const res = await apiClient.post<
-      ApiResponse<{ user: UserProfile; organization: Organization; tokens: AuthTokens }>
+      ApiResponse<{ requiresVerification: true; email: string }>
     >('/auth/register', data);
+    return res.data.data;
+  },
+
+  async verifyEmail(
+    token: string
+  ): Promise<{ user: UserProfile; organization: Organization; tokens: AuthTokens }> {
+    const res = await apiClient.get<
+      ApiResponse<{ user: UserProfile; organization: Organization; tokens: AuthTokens }>
+    >(`/auth/verify-email?token=${token}`);
     return res.data.data;
   },
 

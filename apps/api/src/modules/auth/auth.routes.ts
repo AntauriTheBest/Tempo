@@ -19,6 +19,7 @@ router.post('/set-password', authRateLimiter, validate(setPasswordSchema), async
 router.post('/refresh', authRateLimiter, validate(refreshTokenSchema), asyncHandler(ctrl.handleRefresh));
 router.post('/forgot-password', authRateLimiter, validate(forgotPasswordSchema), asyncHandler(ctrl.handleForgotPassword));
 router.post('/reset-password', authRateLimiter, validate(resetPasswordSchema), asyncHandler(ctrl.handleResetPassword));
+router.get('/verify-email', asyncHandler(ctrl.handleVerifyEmail));
 router.post('/logout', asyncHandler(ctrl.handleLogout));
 router.get('/me', authenticate, asyncHandler(ctrl.handleGetMe));
 

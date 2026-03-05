@@ -53,3 +53,13 @@ export async function handleResetPassword(req: Request, res: Response) {
   const result = await authService.resetPassword(token, password);
   res.json({ success: true, data: result });
 }
+
+export async function handleVerifyEmail(req: Request, res: Response) {
+  const token = req.query.token as string;
+  if (!token) {
+    res.status(400).json({ success: false, message: 'Token requerido' });
+    return;
+  }
+  const result = await authService.verifyEmail(token);
+  res.json({ success: true, data: result });
+}

@@ -46,7 +46,14 @@ export function useAuth() {
 
   const register = useCallback(
     async (data: { orgName: string; name: string; email: string; password: string }) => {
-      const result = await authService.register(data);
+      return authService.register(data);
+    },
+    []
+  );
+
+  const verifyEmail = useCallback(
+    async (token: string) => {
+      const result = await authService.verifyEmail(token);
       localStorage.setItem('accessToken', result.tokens.accessToken);
       localStorage.setItem('refreshToken', result.tokens.refreshToken);
       setUser(result.user);
@@ -80,6 +87,7 @@ export function useAuth() {
     isAdmin,
     login,
     register,
+    verifyEmail,
     setPassword,
     logout,
   };

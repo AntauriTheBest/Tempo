@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { prisma, env } from '../../config';
 import { AppError } from '../../middleware';
-import { sendPasswordResetEmail } from '../../services/email.service';
+import { sendPasswordResetEmail, sendEmailVerificationEmail } from '../../services/email.service';
 import type { JwtPayload, UserRole } from '@todo-list-pro/shared';
 
 const DEFAULT_CATEGORIES = [
@@ -99,6 +99,9 @@ export async function register(orgName: string, name: string, email: string, pas
 
   const passwordHash = await bcrypt.hash(password, 12);
 
+  const verificationToken = randomUUID();
+  const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
   const { org, user } = await prisma.$transaction(async (tx) => {
     const org = await tx.organization.create({
       data: {
@@ -111,7 +114,12 @@ export async function register(orgName: string, name: string, email: string, pas
     });
 
     const user = await tx.user.create({
-      data: { email, passwordHash, name, role: 'ADMIN', isActive: true, organizationId: org.id },
+      data: {
+        email, passwordHash, name, role: 'ADMIN', isActive: true, organizationId: org.id,
+        emailVerified: false,
+        emailVerificationToken: verificationToken,
+        emailVerificationExpiry: verificationExpiry,
+      },
     });
 
     for (let i = 0; i < DEFAULT_CATEGORIES.length; i++) {
@@ -129,9 +137,30 @@ export async function register(orgName: string, name: string, email: string, pas
     return { org, user };
   });
 
-  const tokens = await generateTokens(user.id, user.email, user.role as UserRole, org.id);
+  await sendEmailVerificationEmail(user.email, verificationToken, user.name);
 
-  return { user: formatUser(user), organization: formatOrg(org), tokens };
+  return { requiresVerification: true, email: user.email };
+}
+
+export async function verifyEmail(token: string) {
+  const user = await prisma.user.findUnique({
+    where: { emailVerificationToken: token },
+    include: { organization: true },
+  });
+
+  if (!user) throw new AppError(400, 'Token inválido o expirado');
+  if (user.emailVerified) throw new AppError(400, 'El correo ya fue verificado');
+  if (user.emailVerificationExpiry && user.emailVerificationExpiry < new Date()) {
+    throw new AppError(400, 'El enlace ha expirado. Regístrate de nuevo.');
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { emailVerified: true, emailVerificationToken: null, emailVerificationExpiry: null },
+  });
+
+  const tokens = await generateTokens(user.id, user.email, user.role as UserRole, user.organizationId);
+  return { user: formatUser(user), organization: formatOrg(user.organization), tokens };
 }
 
 export async function login(email: string, password: string) {
@@ -144,6 +173,8 @@ export async function login(email: string, password: string) {
 
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) throw new AppError(401, 'Invalid credentials');
+
+  if (!user.emailVerified) throw new AppError(403, 'EMAIL_NOT_VERIFIED');
 
   const tokens = await generateTokens(user.id, user.email, user.role as UserRole, user.organizationId);
 

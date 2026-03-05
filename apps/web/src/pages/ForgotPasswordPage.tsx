@@ -40,7 +40,7 @@ export function ForgotPasswordPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/50 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Todo-List Pro</CardTitle>
+          <CardTitle className="text-2xl">Tempo</CardTitle>
           <p className="text-sm text-muted-foreground">
             Recuperar contraseña
           </p>
