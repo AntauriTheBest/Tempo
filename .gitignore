@@ -1,8 +1,11 @@
 node_modules/
 dist/
 .env
-.env.production
+.env*
+*.env
 *.env.local
+prod.env
+apps/whatsapp-session/
 .DS_Store
 coverage/
 *.tsbuildinfo
