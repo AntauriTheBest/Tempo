@@ -99,8 +99,11 @@ export async function register(orgName: string, name: string, email: string, pas
 
   const passwordHash = await bcrypt.hash(password, 12);
 
-  const verificationToken = randomUUID();
-  const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const verificationEnabled = env.EMAIL_VERIFICATION_ENABLED;
+  const verificationToken = verificationEnabled ? randomUUID() : null;
+  const verificationExpiry = verificationEnabled
+    ? new Date(Date.now() + 24 * 60 * 60 * 1000)
+    : null;
 
   const { org, user } = await prisma.$transaction(async (tx) => {
     const org = await tx.organization.create({
@@ -116,7 +119,7 @@ export async function register(orgName: string, name: string, email: string, pas
     const user = await tx.user.create({
       data: {
         email, passwordHash, name, role: 'ADMIN', isActive: true, organizationId: org.id,
-        emailVerified: false,
+        emailVerified: !verificationEnabled,
         emailVerificationToken: verificationToken,
         emailVerificationExpiry: verificationExpiry,
       },
@@ -137,9 +140,13 @@ export async function register(orgName: string, name: string, email: string, pas
     return { org, user };
   });
 
-  await sendEmailVerificationEmail(user.email, verificationToken, user.name);
+  if (verificationEnabled && verificationToken) {
+    await sendEmailVerificationEmail(user.email, verificationToken, user.name);
+    return { requiresVerification: true as const, email: user.email };
+  }
 
-  return { requiresVerification: true, email: user.email };
+  const tokens = await generateTokens(user.id, user.email, user.role as UserRole, org.id);
+  return { requiresVerification: false as const, user: formatUser(user), organization: formatOrg(org), tokens };
 }
 
 export async function verifyEmail(token: string) {
@@ -174,7 +181,9 @@ export async function login(email: string, password: string) {
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) throw new AppError(401, 'Invalid credentials');
 
-  if (!user.emailVerified) throw new AppError(403, 'EMAIL_NOT_VERIFIED');
+  if (env.EMAIL_VERIFICATION_ENABLED && !user.emailVerified) {
+    throw new AppError(403, 'EMAIL_NOT_VERIFIED');
+  }
 
   const tokens = await generateTokens(user.id, user.email, user.role as UserRole, user.organizationId);
 

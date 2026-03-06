@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema } from '@todo-list-pro/shared';
 import { z } from 'zod';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -21,6 +21,7 @@ type RegisterForm = z.infer<typeof registerFormSchema>;
 
 export function RegisterPage() {
   const { register: registerUser, isAuthenticated, isLoading } = useAuth();
+  const navigate = useNavigate();
   const [error, setError] = useState('');
   const [sentTo, setSentTo] = useState('');
 
@@ -45,7 +46,11 @@ export function RegisterPage() {
         email: data.email,
         password: data.password,
       });
-      setSentTo(result.email);
+      if (result.requiresVerification) {
+        setSentTo(result.email);
+      } else {
+        navigate('/my-tasks');
+      }
     } catch (err: any) {
       setError(
         err.response?.data?.message || 'Error al crear la cuenta. Inténtalo de nuevo.'

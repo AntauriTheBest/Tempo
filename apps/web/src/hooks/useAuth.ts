@@ -46,9 +46,16 @@ export function useAuth() {
 
   const register = useCallback(
     async (data: { orgName: string; name: string; email: string; password: string }) => {
-      return authService.register(data);
+      const result = await authService.register(data);
+      if (!result.requiresVerification) {
+        localStorage.setItem('accessToken', result.tokens.accessToken);
+        localStorage.setItem('refreshToken', result.tokens.refreshToken);
+        setUser(result.user);
+        setOrganization(result.organization ?? null);
+      }
+      return result;
     },
-    []
+    [setUser, setOrganization]
   );
 
   const verifyEmail = useCallback(

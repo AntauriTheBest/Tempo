@@ -23,10 +23,14 @@ export const authService = {
     name: string;
     email: string;
     password: string;
-  }): Promise<{ requiresVerification: true; email: string }> {
-    const res = await apiClient.post<
-      ApiResponse<{ requiresVerification: true; email: string }>
-    >('/auth/register', data);
+  }): Promise<
+    | { requiresVerification: true; email: string }
+    | { requiresVerification: false; user: UserProfile; organization: Organization; tokens: AuthTokens }
+  > {
+    const res = await apiClient.post<ApiResponse<
+      | { requiresVerification: true; email: string }
+      | { requiresVerification: false; user: UserProfile; organization: Organization; tokens: AuthTokens }
+    >>('/auth/register', data);
     return res.data.data;
   },
 

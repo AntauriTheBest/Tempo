@@ -17,6 +17,10 @@ const envSchema = z.object({
   STRIPE_SUCCESS_URL: z.string().optional(),
   STRIPE_CANCEL_URL: z.string().optional(),
   FRONTEND_URL: z.string().optional(),
+  EMAIL_VERIFICATION_ENABLED: z
+    .string()
+    .transform((v) => v === 'true')
+    .default('false'),
 });
 
 export const env = envSchema.parse(process.env);
