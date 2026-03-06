@@ -4,6 +4,7 @@ import { MainLayout } from './components/layout/MainLayout';
 import { AdminLayout } from './components/layout/AdminLayout';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { AdminRoute } from './components/common/AdminRoute';
+import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { VerifyEmailPage } from './pages/VerifyEmailPage';
@@ -30,7 +31,9 @@ import { SuperAdminPage } from './pages/SuperAdminPage';
 import { useAuth } from './hooks/useAuth';
 
 function HomeRedirect() {
-  const { isAdmin } = useAuth();
+  const { isAuthenticated, isLoading, isAdmin } = useAuth();
+  if (isLoading) return null;
+  if (!isAuthenticated) return <LandingPage />;
   return <Navigate to={isAdmin ? '/dashboard' : '/my-tasks'} replace />;
 }
 
@@ -44,6 +47,7 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/invite" element={<SetPasswordPage />} />
+        <Route path="/" element={<HomeRedirect />} />
         <Route
           element={
             <ProtectedRoute>
@@ -51,7 +55,6 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route path="/" element={<HomeRedirect />} />
           <Route
             path="/my-tasks"
             element={<TasksPage listFilter="my-tasks" />}
