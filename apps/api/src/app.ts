@@ -21,6 +21,7 @@ import { attachmentsRoutes } from './modules/attachments/attachments.routes';
 import { orgRoutes } from './modules/org/org.routes';
 import { billingRoutes } from './modules/billing/billing.routes';
 import { handleStripeWebhook } from './modules/billing/billing.service';
+import { superadminRoutes } from './modules/superadmin/superadmin.routes';
 import { env } from './config';
 
 // Ensure uploads directory exists
@@ -101,6 +102,7 @@ app.use('/api/reports', reportsRoutes);
 app.use('/api/admin/whatsapp', whatsappRoutes);
 app.use('/api/org', orgRoutes);
 app.use('/api/billing', billingRoutes);
+app.use('/api/superadmin', superadminRoutes);
 
 app.use(errorHandler);
 

@@ -37,6 +37,13 @@ export function requireAdmin(req: Request, _res: Response, next: NextFunction) {
   next();
 }
 
+export function requireSuperAdmin(req: Request, _res: Response, next: NextFunction) {
+  if (!req.user || !env.SUPERADMIN_EMAIL || req.user.email !== env.SUPERADMIN_EMAIL) {
+    throw new AppError(403, 'Superadmin access required');
+  }
+  next();
+}
+
 export async function checkOrgStatus(req: Request, _res: Response, next: NextFunction) {
   const { organizationId } = req.user!;
 

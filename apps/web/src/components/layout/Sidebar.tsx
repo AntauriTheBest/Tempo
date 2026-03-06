@@ -13,6 +13,7 @@ import {
   BarChart3,
   UserCheck,
   CreditCard,
+  ServerCog,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/auth.store';
 import { useDroppable } from '@dnd-kit/core';
@@ -97,7 +98,7 @@ export function Sidebar() {
   const { fetchCategories } = useCategories();
   const { fetchTags } = useTags();
   const { clients, fetchClients } = useClients();
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const organization = useAuthStore((s) => s.organization);
   const navigate = useNavigate();
 
@@ -256,6 +257,13 @@ export function Sidebar() {
               label="Facturación"
             />
           </>
+        )}
+        {user?.isSuperAdmin && (
+          <NavItem
+            to="/superadmin"
+            icon={<ServerCog className="h-4 w-4" />}
+            label="Superadmin"
+          />
         )}
         <NavItem
           to="/settings"

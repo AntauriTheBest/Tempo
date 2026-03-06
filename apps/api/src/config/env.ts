@@ -21,6 +21,7 @@ const envSchema = z.object({
     .string()
     .transform((v) => v === 'true')
     .default('false'),
+  SUPERADMIN_EMAIL: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

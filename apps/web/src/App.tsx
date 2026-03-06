@@ -26,6 +26,7 @@ import { ReportsPage } from './pages/ReportsPage';
 import { CalendarPage } from './pages/CalendarPage';
 import { OrgSettingsPage } from './pages/OrgSettingsPage';
 import { BillingPage } from './pages/BillingPage';
+import { SuperAdminPage } from './pages/SuperAdminPage';
 import { useAuth } from './hooks/useAuth';
 
 function HomeRedirect() {
@@ -67,6 +68,7 @@ function App() {
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/org/settings" element={<OrgSettingsPage />} />
           <Route path="/billing" element={<BillingPage />} />
+          <Route path="/superadmin" element={<SuperAdminPage />} />
 
           {/* Admin top-level routes with sidebar visible */}
           <Route

@@ -8,6 +8,7 @@ export interface UserProfile {
   phone: string | null;
   role: UserRole;
   createdAt: string;
+  isSuperAdmin?: boolean;
 }
 
 export interface AdminUserListItem {

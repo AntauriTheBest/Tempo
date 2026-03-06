@@ -57,6 +57,7 @@ function formatUser(user: any) {
     phone: user.phone ?? null,
     role: user.role,
     createdAt: user.createdAt instanceof Date ? user.createdAt.toISOString() : user.createdAt,
+    isSuperAdmin: env.SUPERADMIN_EMAIL ? user.email === env.SUPERADMIN_EMAIL : false,
   };
 }
 
