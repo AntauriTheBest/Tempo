@@ -35,12 +35,13 @@ model Organization {
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
-  users      User[]
-  tasks      Task[]
-  categories Category[]
-  tags       Tag[]
-  lists      TaskList[]
-  clients    Client[]
+  users       User[]
+  tasks       Task[]
+  categories  Category[]
+  tags        Tag[]
+  lists       TaskList[]
+  clients     Client[]
+  automations Automation[]
 
   @@map("organizations")
 }
@@ -80,6 +81,7 @@ model User {
   passwordResetTokens PasswordResetToken[]
   timeEntries         TimeEntry[]
   attachments         Attachment[]
+  automations         Automation[]     @relation("AutomationsCreated")
 
   @@index([organizationId])
   @@map("users")
@@ -268,6 +270,10 @@ model Task {
   timeEntries TimeEntry[]
   attachments Attachment[]
 
+  // Dependencias
+  blockedBy   TaskDependency[] @relation("BlockedTask")
+  blocking    TaskDependency[] @relation("DependsOnTask")
+
   @@index([organizationId, status])
   @@index([userId, status])
   @@index([userId, listId])
@@ -395,6 +401,57 @@ model Attachment {
 
   @@index([taskId])
   @@map("attachments")
+}
+
+// ==================== DEPENDENCIAS ====================
+
+model TaskDependency {
+  id          String   @id @default(cuid())
+  taskId      String
+  task        Task     @relation("BlockedTask", fields: [taskId], references: [id], onDelete: Cascade)
+  dependsOnId String
+  dependsOn   Task     @relation("DependsOnTask", fields: [dependsOnId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([taskId, dependsOnId])
+  @@index([taskId])
+  @@index([dependsOnId])
+  @@map("task_dependencies")
+}
+
+// ==================== AUTOMATIZACIONES ====================
+
+enum AutomationTrigger {
+  TASK_COMPLETED
+  TASK_CREATED
+  STATUS_CHANGED
+  DUE_DATE_APPROACHING
+}
+
+enum AutomationActionType {
+  NOTIFY_ASSIGNEES
+  NOTIFY_USER
+  SET_STATUS
+  SET_ASSIGNEE
+}
+
+model Automation {
+  id             String               @id @default(cuid())
+  name           String
+  organizationId String
+  organization   Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdById    String
+  createdBy      User                 @relation("AutomationsCreated", fields: [createdById], references: [id], onDelete: Cascade)
+  trigger        AutomationTrigger
+  triggerConfig  Json?
+  actionType     AutomationActionType
+  actionConfig   Json
+  isActive       Boolean              @default(true)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@index([organizationId, isActive])
+  @@map("automations")
 }
 
 // ==================== APP SETTINGS ====================

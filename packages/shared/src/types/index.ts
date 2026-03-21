@@ -11,3 +11,5 @@ export * from './comment.types';
 export * from './recurrence.types';
 export * from './time-entry.types';
 export * from './report.types';
+export * from './dependency.types';
+export * from './automation.types';

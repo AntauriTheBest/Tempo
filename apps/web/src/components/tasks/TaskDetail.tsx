@@ -30,6 +30,7 @@ import { Separator } from '../ui/separator';
 import { CommentList } from './CommentList';
 import { PomodoroTimer } from '../pomodoro/PomodoroTimer';
 import { PomodoroStats } from '../pomodoro/PomodoroStats';
+import { TaskDependencies } from './TaskDependencies';
 import { tasksService } from '../../services/tasks.service';
 import { useTasksStore } from '../../store/tasks.store';
 import type { Task, TaskStatus } from '@todo-list-pro/shared';
@@ -405,6 +406,11 @@ export function TaskDetail({
                 </div>
               </div>
             )}
+
+            <Separator />
+
+            {/* Dependencies */}
+            <TaskDependencies taskId={displayTask.id} />
 
             <Separator />
 

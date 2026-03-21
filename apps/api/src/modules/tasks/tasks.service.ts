@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../config';
 import { AppError } from '../../middleware';
 import { buildPaginationMeta } from '../../shared';
+import { runAutomations } from '../automations/automations.service';
 
 const taskIncludeBase = {
   category: { select: { id: true, name: true, color: true, icon: true } },
@@ -407,8 +408,21 @@ export async function updateStatus(
 
   const task = await prisma.task.findFirst({
     where: { id: taskId, ...ownershipFilter },
+    include: { assignments: { select: { userId: true } } },
   });
   if (!task) throw new AppError(404, 'Task not found');
+
+  // Block completion if unresolved dependencies exist
+  if (status === 'COMPLETED') {
+    const blockers = await prisma.taskDependency.findMany({
+      where: { taskId, dependsOn: { status: { not: 'COMPLETED' } } },
+      include: { dependsOn: { select: { title: true } } },
+    });
+    if (blockers.length > 0) {
+      const names = blockers.map((b) => `"${b.dependsOn.title}"`).join(', ');
+      throw new AppError(422, `Cannot complete task: blocked by ${names}`);
+    }
+  }
 
   const updateData: any = { status };
   if (status === 'COMPLETED') {
@@ -422,6 +436,26 @@ export async function updateStatus(
     data: updateData,
     include: taskInclude,
   });
+
+  // Fire automations async (non-blocking)
+  const assigneeIds = (task.assignments ?? []).map((a: any) => a.userId);
+  runAutomations(organizationId, 'TASK_COMPLETED' as any, {
+    taskId,
+    taskTitle: task.title,
+    newStatus: status,
+    assigneeIds,
+    listId: task.listId,
+  }).catch(() => {});
+
+  if (status !== task.status) {
+    runAutomations(organizationId, 'STATUS_CHANGED' as any, {
+      taskId,
+      taskTitle: task.title,
+      newStatus: status,
+      assigneeIds,
+      listId: task.listId,
+    }).catch(() => {});
+  }
 
   return transformTask(updated);
 }

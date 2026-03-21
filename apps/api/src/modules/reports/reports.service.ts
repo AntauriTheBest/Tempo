@@ -351,3 +351,130 @@ export async function getAdminStats(
     timeByUser,
   };
 }
+
+// ── Team Dashboard ────────────────────────────────────────────────────────────
+
+export async function getTeamDashboard(organizationId: string) {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  // All tasks in the org
+  const [members, tasksByUser, overdueTasks, recentActivity] = await Promise.all([
+    // Members with task counts
+    prisma.user.findMany({
+      where: { organizationId, isActive: true },
+      select: { id: true, name: true, avatar: true, role: true },
+    }),
+
+    // Tasks grouped by assignee
+    prisma.taskAssignment.groupBy({
+      by: ['userId'],
+      where: { task: { organizationId } },
+      _count: { taskId: true },
+    }),
+
+    // Overdue tasks (non-completed, past due date)
+    prisma.task.findMany({
+      where: {
+        organizationId,
+        status: { notIn: ['COMPLETED', 'CANCELLED'] },
+        dueDate: { lt: now },
+        parentId: null,
+      },
+      select: {
+        id: true,
+        title: true,
+        dueDate: true,
+        priority: true,
+        assignments: { include: { user: { select: { id: true, name: true, avatar: true } } } },
+      },
+      orderBy: { dueDate: 'asc' },
+      take: 10,
+    }),
+
+    // Recent completions this month
+    prisma.task.findMany({
+      where: {
+        organizationId,
+        status: 'COMPLETED',
+        completedAt: { gte: startOfMonth },
+        parentId: null,
+      },
+      select: {
+        id: true,
+        title: true,
+        completedAt: true,
+        assignments: { include: { user: { select: { id: true, name: true, avatar: true } } } },
+      },
+      orderBy: { completedAt: 'desc' },
+      take: 10,
+    }),
+  ]);
+
+  // Task status summary per user
+  const taskStatusByUser = await prisma.taskAssignment.groupBy({
+    by: ['userId'],
+    where: { task: { organizationId, status: { not: 'CANCELLED' } } },
+    _count: { taskId: true },
+  });
+
+  const completedByUser = await prisma.taskAssignment.groupBy({
+    by: ['userId'],
+    where: { task: { organizationId, status: 'COMPLETED' } },
+    _count: { taskId: true },
+  });
+
+  const overdueByUser = await prisma.taskAssignment.groupBy({
+    by: ['userId'],
+    where: {
+      task: {
+        organizationId,
+        status: { notIn: ['COMPLETED', 'CANCELLED'] },
+        dueDate: { lt: now },
+      },
+    },
+    _count: { taskId: true },
+  });
+
+  const workload = members.map((m) => {
+    const total = tasksByUser.find((t) => t.userId === m.id)?._count.taskId ?? 0;
+    const completed = completedByUser.find((t) => t.userId === m.id)?._count.taskId ?? 0;
+    const overdue = overdueByUser.find((t) => t.userId === m.id)?._count.taskId ?? 0;
+    const active = total - completed;
+    const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+    return { ...m, total, active, completed, overdue, completionRate };
+  });
+
+  // Org-wide summary
+  const [orgTotals] = await Promise.all([
+    prisma.task.groupBy({
+      by: ['status'],
+      where: { organizationId, parentId: null },
+      _count: { id: true },
+    }),
+  ]);
+
+  const summary = {
+    total: orgTotals.reduce((s, r) => s + r._count.id, 0),
+    pending: orgTotals.find((r) => r.status === 'PENDING')?._count.id ?? 0,
+    inProgress: orgTotals.find((r) => r.status === 'IN_PROGRESS')?._count.id ?? 0,
+    completed: orgTotals.find((r) => r.status === 'COMPLETED')?._count.id ?? 0,
+    cancelled: orgTotals.find((r) => r.status === 'CANCELLED')?._count.id ?? 0,
+    overdue: overdueTasks.length,
+  };
+
+  return {
+    summary,
+    workload,
+    overdueTasks: overdueTasks.map((t) => ({
+      ...t,
+      assignees: t.assignments.map((a) => a.user),
+      assignments: undefined,
+    })),
+    recentActivity: recentActivity.map((t) => ({
+      ...t,
+      assignees: t.assignments.map((a) => a.user),
+      assignments: undefined,
+    })),
+  };
+}

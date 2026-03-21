@@ -22,3 +22,9 @@ export async function handleGetAdminStats(req: Request, res: Response) {
   const stats = await reportsService.getAdminStats(period, year, month, week, userId);
   res.json({ success: true, data: stats });
 }
+
+export async function handleGetTeamDashboard(req: Request, res: Response) {
+  const { organizationId } = req.user!;
+  const stats = await reportsService.getTeamDashboard(organizationId);
+  res.json({ success: true, data: stats });
+}

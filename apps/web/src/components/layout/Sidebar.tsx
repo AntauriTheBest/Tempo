@@ -13,6 +13,8 @@ import {
   BarChart3,
   UserCheck,
   CreditCard,
+  Users,
+  Zap,
   ServerCog,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/auth.store';
@@ -165,6 +167,16 @@ export function Sidebar() {
           to="/calendar"
           icon={<CalendarDays className="h-4 w-4" />}
           label="Calendario"
+        />
+        <NavItem
+          to="/team"
+          icon={<Users className="h-4 w-4" />}
+          label="Equipo"
+        />
+        <NavItem
+          to="/automations"
+          icon={<Zap className="h-4 w-4" />}
+          label="Automatizaciones"
         />
 
         {/* Lists section */}
