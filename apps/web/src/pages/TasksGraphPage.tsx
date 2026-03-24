@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { apiClient } from '../services/api-client';
 import { dependenciesService } from '../services/dependencies.service';
 import { toast } from 'sonner';
-import { ZoomIn, ZoomOut, Maximize2, RefreshCw, Info, Link2, X, Trash2 } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, RefreshCw, Info, Link2, X } from 'lucide-react';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -117,8 +117,6 @@ export function TasksGraphPage() {
   const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0, tx: 0, ty: 0 });
 
-  const svgW = nodes.length ? Math.max(...nodes.map((n) => n.x + NODE_W + PAD), 800) : 800;
-  const svgH = nodes.length ? Math.max(...nodes.map((n) => n.y + NODE_H + PAD), 500) : 500;
 
   const fetchGraph = useCallback(async () => {
     setLoading(true);

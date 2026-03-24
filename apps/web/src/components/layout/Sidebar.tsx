@@ -96,7 +96,7 @@ export function Sidebar() {
   const { fetchCategories } = useCategories();
   const { fetchTags } = useTags();
   const { clients, fetchClients } = useClients();
-  const { isAdmin, user } = useAuth();
+  const { isAdmin } = useAuth();
   const organization = useAuthStore((s) => s.organization);
   const navigate = useNavigate();
 
