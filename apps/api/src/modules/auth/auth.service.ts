@@ -22,7 +22,7 @@ const DEFAULT_LISTS = [
 
 function generateAccessToken(userId: string, email: string, role: UserRole, organizationId: string): string {
   return jwt.sign({ userId, email, role, organizationId } as JwtPayload, env.JWT_SECRET, {
-    expiresIn: env.JWT_ACCESS_EXPIRY,
+    expiresIn: env.JWT_ACCESS_EXPIRY as any,
   });
 }
 

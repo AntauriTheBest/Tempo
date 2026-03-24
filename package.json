@@ -20,5 +20,12 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "overrides": {
+    "@types/express": "^4.17.0",
+    "@types/express-serve-static-core": "^4.17.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.25"
   }
 }

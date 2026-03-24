@@ -72,7 +72,7 @@ export async function handleMessage(
 
   const user = await prisma.user.findUnique({
     where: { phone: fromPhone },
-    select: { id: true, name: true, role: true },
+    select: { id: true, name: true, role: true, organizationId: true },
   });
 
   if (!user) {
@@ -86,7 +86,7 @@ export async function handleMessage(
 
   // tareas / mis tareas
   if (normalized === 'tareas' || normalized === 'mis tareas') {
-    const result = await tasksService.getAll(user.id, {
+    const result = await tasksService.getAll(user.id, user.organizationId, {
       status: 'PENDING,IN_PROGRESS', sortBy: 'priority', sortDir: 'desc', limit: 10,
     });
     const tasks = result.data.map((t: any) => ({ id: t.id, title: t.title, priority: t.priority, dueDate: t.dueDate ?? null }));
@@ -97,7 +97,7 @@ export async function handleMessage(
 
   // urgentes
   if (normalized === 'urgentes') {
-    const result = await tasksService.getAll(user.id, {
+    const result = await tasksService.getAll(user.id, user.organizationId, {
       priority: 'URGENT,HIGH', status: 'PENDING,IN_PROGRESS', sortBy: 'priority', sortDir: 'desc', limit: 10,
     });
     const tasks = result.data.map((t: any) => ({ id: t.id, title: t.title, priority: t.priority, dueDate: t.dueDate ?? null }));
@@ -109,7 +109,7 @@ export async function handleMessage(
   // vencidas
   if (normalized === 'vencidas') {
     const today = new Date().toISOString().split('T')[0];
-    const result = await tasksService.getAll(user.id, {
+    const result = await tasksService.getAll(user.id, user.organizationId, {
       dueDateTo: today, status: 'PENDING,IN_PROGRESS', sortBy: 'dueDate', sortDir: 'asc', limit: 10,
     });
     const tasks = result.data.map((t: any) => ({ id: t.id, title: t.title, priority: t.priority, dueDate: t.dueDate ?? null }));
@@ -122,7 +122,7 @@ export async function handleMessage(
   const newMatch = normalized.match(/^nueva\s+(.+)$/);
   if (newMatch) {
     const title = text.trim().replace(/^nueva\s+/i, '');
-    await tasksService.create(user.id, { title });
+    await tasksService.create(user.id, user.organizationId, { title });
     await sendReply(`✅ Tarea creada: *${title}*\n\nResponde *tareas* para ver tu lista actualizada.`);
     return;
   }
@@ -141,7 +141,7 @@ export async function handleMessage(
       return;
     }
     const task = taskList[n - 1];
-    await tasksService.updateStatus(user.id, task.id, 'COMPLETED');
+    await tasksService.updateStatus(user.id, user.organizationId, task.id, 'COMPLETED');
     await sendReply(`✅ Tarea *${n}* completada: _${task.title}_`);
     return;
   }
@@ -216,10 +216,10 @@ export async function handleMessage(
       const nombre = teamTaskMatch[1].trim();
       const foundUser = await prisma.user.findFirst({
         where: { name: { contains: nombre, mode: 'insensitive' }, isActive: true },
-        select: { id: true, name: true },
+        select: { id: true, name: true, organizationId: true },
       });
       if (!foundUser) { await sendReply(`❌ No se encontró ningún usuario con el nombre "${nombre}".`); return; }
-      const result = await tasksService.getAll(foundUser.id, {
+      const result = await tasksService.getAll(foundUser.id, foundUser.organizationId, {
         status: 'PENDING,IN_PROGRESS', sortBy: 'priority', sortDir: 'desc', limit: 10,
       });
       const tasks = result.data.map((t: any) => ({ id: t.id, title: t.title, priority: t.priority, dueDate: t.dueDate ?? null }));

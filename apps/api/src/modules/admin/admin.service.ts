@@ -90,6 +90,7 @@ export async function inviteUser(organizationId: string, data: InviteUserRequest
       data: defaultCategories.map((cat, i) => ({
         ...cat,
         userId: newUser.id,
+        organizationId,
         order: i,
       })),
     });
@@ -98,6 +99,7 @@ export async function inviteUser(organizationId: string, data: InviteUserRequest
       data: defaultLists.map((list, i) => ({
         ...list,
         userId: newUser.id,
+        organizationId,
         order: i,
       })),
     });
@@ -217,7 +219,7 @@ export async function getAllTasks(organizationId: string, filters: {
   else if (sortBy === 'title') orderBy = { title: sortDir };
   else if (sortBy === 'status') orderBy = { status: sortDir };
   else if (sortBy === 'user') orderBy = { user: { name: sortDir } };
-  else if (sortBy === 'list') orderBy = { list: { name: { sort: sortDir, nulls: 'last' } } };
+  else if (sortBy === 'list') orderBy = { list: { name: sortDir } };
   else orderBy = { createdAt: sortDir };
 
   const [tasks, total] = await Promise.all([
@@ -331,6 +333,7 @@ export async function generateMonthlyTasks(year: number, month: number) {
           categoryId: template.categoryId,
           listId: template.listId,
           userId: template.userId,
+          organizationId: template.organizationId,
           generatedFromId: template.id,
           dueDate,
           status: 'PENDING',

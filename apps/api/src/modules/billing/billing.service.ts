@@ -5,7 +5,7 @@ import type { Organization } from '@prisma/client';
 
 function getStripe(): Stripe | null {
   if (!env.STRIPE_SECRET_KEY) return null;
-  return new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2025-01-27.acacia' });
+  return new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2026-02-25.clover' });
 }
 
 function daysLeft(date: Date): number {
