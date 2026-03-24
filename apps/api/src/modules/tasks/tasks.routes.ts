@@ -22,6 +22,9 @@ router.get('/', validate(taskFiltersSchema, 'query'), asyncHandler(ctrl.handleGe
 router.post('/', validate(createTaskSchema), asyncHandler(ctrl.handleCreate));
 router.patch('/reorder', validate(reorderSchema), asyncHandler(ctrl.handleReorder));
 
+// Graph route (must be before /:id)
+router.get('/graph', asyncHandler(ctrl.handleGetGraph));
+
 // Task-specific routes (must be before /:id to avoid conflicts)
 router.get('/:taskId/comments', asyncHandler(commentsCtrl.handleGetByTask));
 router.post('/:taskId/comments', validate(createCommentSchema, 'body'), asyncHandler(commentsCtrl.handleCreate));

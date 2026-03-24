@@ -103,3 +103,12 @@ export async function handleDuplicate(req: Request, res: Response) {
   );
   res.status(201).json({ success: true, data: task });
 }
+
+export async function handleGetGraph(req: Request, res: Response) {
+  const data = await tasksService.getGraph(
+    req.user!.userId,
+    req.user!.organizationId,
+    req.user!.role
+  );
+  res.json({ success: true, data });
+}

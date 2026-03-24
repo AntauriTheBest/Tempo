@@ -73,6 +73,7 @@ export async function getAll(
     sortDir?: string;
     page?: number;
     limit?: number;
+    includeArchived?: string;
   },
   role?: string
 ) {
@@ -152,6 +153,17 @@ export async function getAll(
     where.parentId = null;
   }
 
+  // Hide tasks completed/cancelled more than 30 days ago unless explicitly requested
+  if (filters.includeArchived !== 'true') {
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    where.NOT = {
+      AND: [
+        { status: { in: ['COMPLETED', 'CANCELLED'] } },
+        { updatedAt: { lt: cutoff } },
+      ],
+    };
+  }
+
   // Build orderBy
   const sortBy = filters.sortBy ?? 'order';
   const sortDir = (filters.sortDir ?? 'asc') as 'asc' | 'desc';
@@ -163,6 +175,8 @@ export async function getAll(
     orderBy = { dueDate: { sort: sortDir, nulls: 'last' } };
   } else if (sortBy === 'createdAt') {
     orderBy = { createdAt: sortDir };
+  } else if (sortBy === 'updatedAt') {
+    orderBy = { updatedAt: sortDir };
   } else if (sortBy === 'title') {
     orderBy = { title: sortDir };
   } else if (sortBy === 'status') {
@@ -601,4 +615,42 @@ export async function duplicate(
   });
 
   return transformTask(task);
+}
+
+export async function getGraph(userId: string, organizationId: string, role?: string) {
+  const ownershipFilter: Prisma.TaskWhereInput = role === 'ADMIN'
+    ? { organizationId, parentId: null }
+    : { organizationId, parentId: null, OR: [{ userId }, { assignments: { some: { userId } } }] };
+
+  const [tasks, edges] = await Promise.all([
+    prisma.task.findMany({
+      where: ownershipFilter,
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        priority: true,
+        dueDate: true,
+        createdAt: true,
+        listId: true,
+        list: { select: { id: true, name: true, color: true } },
+        assignments: { select: { user: { select: { id: true, name: true, avatar: true } } } },
+      },
+      orderBy: { order: 'asc' },
+      take: 300,
+    }),
+    prisma.taskDependency.findMany({
+      where: { task: { organizationId } },
+      select: { taskId: true, dependsOnId: true },
+    }),
+  ]);
+
+  return {
+    nodes: tasks.map((t) => ({
+      ...t,
+      assignees: (t.assignments ?? []).map((a: any) => a.user),
+      assignments: undefined,
+    })),
+    edges,
+  };
 }

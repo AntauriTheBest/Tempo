@@ -79,10 +79,11 @@ export interface TaskFilters {
   isRecurring?: 'true' | 'false';
   parentId?: string;
   assignedTo?: string;
-  sortBy?: 'dueDate' | 'createdAt' | 'priority' | 'order' | 'title' | 'status';
+  sortBy?: 'dueDate' | 'createdAt' | 'updatedAt' | 'priority' | 'order' | 'title' | 'status';
   sortDir?: 'asc' | 'desc';
   page?: number;
   limit?: number;
+  includeArchived?: 'true' | 'false';
 }
 
 export interface UpdateTaskStatusRequest {

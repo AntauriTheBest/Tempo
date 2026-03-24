@@ -3,19 +3,15 @@ import { NavLink, Link, useNavigate } from 'react-router-dom';
 import {
   User,
   Plus,
-  Tag,
   ChevronDown,
   Building2,
-  Shield,
   LayoutDashboard,
-  CalendarCheck,
   CalendarDays,
   BarChart3,
   UserCheck,
-  CreditCard,
   Users,
-  Zap,
-  ServerCog,
+  GitFork,
+  GanttChartSquare,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/auth.store';
 import { useDroppable } from '@dnd-kit/core';
@@ -174,9 +170,14 @@ export function Sidebar() {
           label="Equipo"
         />
         <NavItem
-          to="/automations"
-          icon={<Zap className="h-4 w-4" />}
-          label="Automatizaciones"
+          to="/graph"
+          icon={<GitFork className="h-4 w-4" />}
+          label="Grafo de dependencias"
+        />
+        <NavItem
+          to="/gantt"
+          icon={<GanttChartSquare className="h-4 w-4" />}
+          label="Gantt"
         />
 
         {/* Lists section */}
@@ -239,50 +240,6 @@ export function Sidebar() {
         </div>
       </nav>
 
-      {/* Bottom section */}
-      <div className="border-t p-3 space-y-1">
-        {isAdmin && (
-          <>
-            <NavItem
-              to="/admin/monthly"
-              icon={<CalendarCheck className="h-4 w-4" />}
-              label="Igualas"
-            />
-            <NavItem
-              to="/admin/reports"
-              icon={<BarChart3 className="h-4 w-4" />}
-              label="Reportes globales"
-            />
-            <NavItem
-              to="/admin/users"
-              icon={<Shield className="h-4 w-4" />}
-              label="Administración"
-            />
-            <NavItem
-              to="/org/settings"
-              icon={<Building2 className="h-4 w-4" />}
-              label="Mi organización"
-            />
-            <NavItem
-              to="/billing"
-              icon={<CreditCard className="h-4 w-4" />}
-              label="Facturación"
-            />
-          </>
-        )}
-        {user?.isSuperAdmin && (
-          <NavItem
-            to="/superadmin"
-            icon={<ServerCog className="h-4 w-4" />}
-            label="Superadmin"
-          />
-        )}
-        <NavItem
-          to="/settings"
-          icon={<Tag className="h-4 w-4" />}
-          label="Etiquetas"
-        />
-      </div>
     </aside>
   );
 }

@@ -30,6 +30,8 @@ import { BillingPage } from './pages/BillingPage';
 import { SuperAdminPage } from './pages/SuperAdminPage';
 import { AutomationsPage } from './pages/AutomationsPage';
 import { TeamDashboardPage } from './pages/TeamDashboardPage';
+import { TasksGraphPage } from './pages/TasksGraphPage';
+import { GanttPage } from './pages/GanttPage';
 import { useAuth } from './hooks/useAuth';
 
 function HomeRedirect() {
@@ -76,6 +78,8 @@ function App() {
           <Route path="/superadmin" element={<SuperAdminPage />} />
           <Route path="/automations" element={<AutomationsPage />} />
           <Route path="/team" element={<TeamDashboardPage />} />
+          <Route path="/graph" element={<TasksGraphPage />} />
+          <Route path="/gantt" element={<GanttPage />} />
 
           {/* Admin top-level routes with sidebar visible */}
           <Route

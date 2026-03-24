@@ -42,11 +42,12 @@ export const taskFiltersSchema = z.object({
   parentId: z.string().optional(),
   assignedTo: z.string().optional(),
   sortBy: z
-    .enum(['dueDate', 'createdAt', 'priority', 'order', 'title', 'status'])
+    .enum(['dueDate', 'createdAt', 'updatedAt', 'priority', 'order', 'title', 'status'])
     .default('order'),
   sortDir: z.enum(['asc', 'desc']).default('asc'),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
+  includeArchived: z.enum(['true', 'false']).optional(),
 });
 
 export const updateTaskStatusSchema = z.object({
