@@ -106,7 +106,7 @@ export function TaskList({
   return (
     <div className="rounded-lg border">
       {/* Column Headers */}
-      <div className="grid grid-cols-[auto_auto_auto_auto_1fr_100px_120px_120px_100px_80px_auto] items-center gap-2 px-3 py-2 bg-muted/50 border-b text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+      <div className="grid grid-cols-[auto_auto_auto_auto_1fr_100px_100px_100px_120px_100px_80px_auto] items-center gap-2 px-3 py-2 bg-muted/50 border-b text-xs font-semibold text-muted-foreground uppercase tracking-wider">
         <div className="w-4" />
         <div className="w-5" />
         <div className="w-5" />
@@ -126,7 +126,14 @@ export function TaskList({
           onSort={onSortChange}
         />
         <SortableHeader
-          label="Fecha"
+          label="Inicio"
+          field="startDate"
+          currentSort={sortBy}
+          currentDir={sortDir}
+          onSort={onSortChange}
+        />
+        <SortableHeader
+          label="Vence"
           field="dueDate"
           currentSort={sortBy}
           currentDir={sortDir}

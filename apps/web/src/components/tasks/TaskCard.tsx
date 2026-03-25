@@ -208,7 +208,7 @@ export function TaskCard({
       {/* Main Row */}
       <div
         className={cn(
-          'group grid grid-cols-[auto_auto_auto_auto_1fr_100px_120px_120px_100px_80px_auto] items-center gap-2 px-3 py-2.5 transition-colors hover:bg-accent/50 cursor-pointer',
+          'group grid grid-cols-[auto_auto_auto_auto_1fr_100px_100px_100px_120px_100px_80px_auto] items-center gap-2 px-3 py-2.5 transition-colors hover:bg-accent/50 cursor-pointer',
           isCompleted && 'opacity-60'
         )}
         onClick={() => onClick(task)}
@@ -317,6 +317,18 @@ export function TaskCard({
                 </button>
               ))}
             </div>
+          )}
+        </div>
+
+        {/* Start Date — read-only display */}
+        <div onClick={(e) => e.stopPropagation()}>
+          {task.startDate ? (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Calendar className="h-3 w-3" />
+              {format(new Date(task.startDate), 'MMM d')}
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground/50">—</span>
           )}
         </div>
 
