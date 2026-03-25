@@ -12,6 +12,7 @@ interface GanttTask {
   title: string;
   status: string;
   priority: string;
+  startDate?: string | null;
   createdAt: string;
   dueDate?: string | null;
   list?: { name: string; color: string } | null;
@@ -103,7 +104,7 @@ export function GanttPage() {
 
   const getBarProps = (task: GanttTask) => {
     if (!task.dueDate) return null;
-    const start = startOfDay(new Date(task.createdAt));
+    const start = startOfDay(new Date(task.startDate ?? task.createdAt));
     const end = startOfDay(new Date(task.dueDate));
     const barStart = isBefore(start, viewStart) ? viewStart : start;
     const barEnd = isAfter(end, viewEnd) ? viewEnd : end;
@@ -275,7 +276,7 @@ export function GanttPage() {
                         <div
                           className={`absolute top-1/2 -translate-y-1/2 rounded-md ${STATUS_BAR[task.status] ?? STATUS_BAR.PENDING} opacity-85 flex items-center px-2`}
                           style={{ left: bar.left, width: bar.width, height: 24 }}
-                          title={`${task.title} — ${STATUS_LABELS[task.status]}\nVence: ${task.dueDate ? format(new Date(task.dueDate), 'dd MMM yyyy', { locale: es }) : '—'}`}
+                          title={`${task.title} — ${STATUS_LABELS[task.status]}\nInicio: ${task.startDate ? format(new Date(task.startDate), 'dd MMM yyyy', { locale: es }) : '—'}\nVence: ${task.dueDate ? format(new Date(task.dueDate), 'dd MMM yyyy', { locale: es }) : '—'}`}
                         >
                           <span className="text-white text-[10px] font-medium truncate leading-none">
                             {bar.width > 60 ? task.title : ''}

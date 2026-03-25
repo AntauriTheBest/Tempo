@@ -228,6 +228,7 @@ export async function create(
   data: {
     title: string;
     description?: string;
+    startDate?: string;
     dueDate?: string;
     categoryId?: string;
     listId?: string;
@@ -270,12 +271,13 @@ export async function create(
     _max: { order: true },
   });
 
-  const { tagIds, assigneeIds, dueDate, isRecurring, recurrence, ...taskData } = data;
+  const { tagIds, assigneeIds, startDate, dueDate, isRecurring, recurrence, ...taskData } = data;
 
   const task = await prisma.$transaction(async (tx) => {
     const created = await tx.task.create({
       data: {
         ...taskData,
+        startDate: startDate ? new Date(startDate) : undefined,
         dueDate: dueDate ? new Date(dueDate) : undefined,
         userId,
         organizationId,
@@ -334,6 +336,7 @@ export async function update(
   data: {
     title?: string;
     description?: string | null;
+    startDate?: string | null;
     dueDate?: string | null;
     categoryId?: string | null;
     listId?: string | null;
@@ -352,10 +355,45 @@ export async function update(
   });
   if (!existing) throw new AppError(404, 'Task not found');
 
-  const { tagIds, assigneeIds, dueDate, ...taskData } = data;
+  // Validate dependency dates: new dueDate must not be after any dependent task's startDate
+  if (data.dueDate !== undefined) {
+    const newDueDate = data.dueDate ? new Date(data.dueDate) : null;
+    if (newDueDate) {
+      const blockingViolations = await prisma.taskDependency.findMany({
+        where: { dependsOnId: taskId },
+        include: { task: { select: { id: true, title: true, startDate: true } } },
+      });
+      for (const dep of blockingViolations) {
+        if (dep.task.startDate && dep.task.startDate < newDueDate) {
+          throw new AppError(422, `La tarea "${dep.task.title}" depende de esta y tiene fecha de inicio (${dep.task.startDate.toISOString().split('T')[0]}) anterior a la nueva fecha límite.`);
+        }
+      }
+    }
+  }
+
+  // Validate: new startDate must not be before dueDate of tasks this task depends on
+  if (data.startDate !== undefined) {
+    const newStartDate = data.startDate ? new Date(data.startDate) : null;
+    if (newStartDate) {
+      const blockedByViolations = await prisma.taskDependency.findMany({
+        where: { taskId },
+        include: { dependsOn: { select: { id: true, title: true, dueDate: true } } },
+      });
+      for (const dep of blockedByViolations) {
+        if (dep.dependsOn.dueDate && newStartDate < dep.dependsOn.dueDate) {
+          throw new AppError(422, `Esta tarea depende de "${dep.dependsOn.title}" que termina el ${dep.dependsOn.dueDate.toISOString().split('T')[0]}. La fecha de inicio no puede ser anterior.`);
+        }
+      }
+    }
+  }
+
+  const { tagIds, assigneeIds, startDate, dueDate, ...taskData } = data;
 
   const task = await prisma.$transaction(async (tx) => {
     const updateData: any = { ...taskData };
+    if (startDate !== undefined) {
+      updateData.startDate = startDate ? new Date(startDate) : null;
+    }
     if (dueDate !== undefined) {
       updateData.dueDate = dueDate ? new Date(dueDate) : null;
     }

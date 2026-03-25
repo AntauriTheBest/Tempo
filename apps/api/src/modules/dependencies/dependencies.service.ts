@@ -12,11 +12,19 @@ export async function addDependency(
 
   // Verify both tasks belong to the org
   const [task, dependsOn] = await Promise.all([
-    prisma.task.findFirst({ where: { id: taskId, organizationId } }),
-    prisma.task.findFirst({ where: { id: dependsOnId, organizationId } }),
+    prisma.task.findFirst({ where: { id: taskId, organizationId }, select: { id: true, title: true, startDate: true, dueDate: true } }),
+    prisma.task.findFirst({ where: { id: dependsOnId, organizationId }, select: { id: true, title: true, startDate: true, dueDate: true } }),
   ]);
   if (!task) throw new AppError(404, 'Task not found');
   if (!dependsOn) throw new AppError(404, 'Dependency task not found');
+
+  // Validate dates: task.startDate must not be before dependsOn.dueDate
+  if (task.startDate && dependsOn.dueDate && task.startDate < dependsOn.dueDate) {
+    throw new AppError(
+      422,
+      `"${task.title}" tiene fecha de inicio anterior al vencimiento de "${dependsOn.title}". Ajusta las fechas antes de agregar la dependencia.`
+    );
+  }
 
   // Prevent circular dependency: check if dependsOnId already depends (directly or transitively) on taskId
   const wouldCreateCycle = await hasCyclicDependency(dependsOnId, taskId);

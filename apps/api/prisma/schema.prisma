@@ -230,6 +230,7 @@ model Task {
   title          String
   description    String?
   status         TaskStatus   @default(PENDING)
+  startDate      DateTime?
   dueDate        DateTime?
   completedAt    DateTime?
   order          Int          @default(0)

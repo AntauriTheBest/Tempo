@@ -32,6 +32,7 @@ const emptyToUndefined = (val: unknown) => (val === '' ? undefined : val);
 const taskFormSchema = z.object({
   title: z.string().min(1, 'El título es obligatorio').max(500),
   description: z.preprocess(emptyToUndefined, z.string().max(5000).optional()),
+  startDate: z.preprocess(emptyToUndefined, z.string().optional()),
   dueDate: z.preprocess(emptyToUndefined, z.string().optional()),
   categoryId: z.preprocess(emptyToUndefined, z.string().cuid().optional()),
   listId: z.preprocess(emptyToUndefined, z.string().cuid().optional()),
@@ -118,6 +119,9 @@ export function TaskForm({
         reset({
           title: task.title,
           description: task.description || undefined,
+          startDate: task.startDate
+            ? new Date(task.startDate).toISOString().slice(0, 16)
+            : undefined,
           dueDate: task.dueDate
             ? new Date(task.dueDate).toISOString().slice(0, 16)
             : undefined,
@@ -136,6 +140,7 @@ export function TaskForm({
         reset({
           title: '',
           description: undefined,
+          startDate: undefined,
           dueDate: defaultDueDate
             ? new Date(defaultDueDate).toISOString().slice(0, 16)
             : undefined,
@@ -171,6 +176,9 @@ export function TaskForm({
     name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 
   const handleFormSubmit = async (data: TaskFormData) => {
+    if (data.startDate) {
+      data.startDate = new Date(data.startDate).toISOString();
+    }
     if (data.dueDate) {
       data.dueDate = new Date(data.dueDate).toISOString();
     }
@@ -290,8 +298,17 @@ export function TaskForm({
                 />
               </div>
 
-              {/* Fecha límite + Categoría */}
+              {/* Fecha inicio + Fecha límite */}
               <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="startDate" className="text-xs">Fecha inicio</Label>
+                  <Input
+                    id="startDate"
+                    type="datetime-local"
+                    className="h-8 text-sm"
+                    {...register('startDate')}
+                  />
+                </div>
                 <div className="space-y-1">
                   <Label htmlFor="dueDate" className="text-xs">Fecha límite</Label>
                   <Input
@@ -301,21 +318,23 @@ export function TaskForm({
                     {...register('dueDate')}
                   />
                 </div>
-                <div className="space-y-1">
-                  <Label htmlFor="categoryId" className="text-xs">Categoría</Label>
-                  <select
-                    id="categoryId"
-                    className="h-8 w-full rounded-md border border-input bg-background px-2 text-sm"
-                    {...register('categoryId')}
-                  >
-                    <option value="">Sin categoría</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              </div>
+
+              {/* Categoría */}
+              <div className="space-y-1">
+                <Label htmlFor="categoryId" className="text-xs">Categoría</Label>
+                <select
+                  id="categoryId"
+                  className="h-8 w-full rounded-md border border-input bg-background px-2 text-sm"
+                  {...register('categoryId')}
+                >
+                  <option value="">Sin categoría</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Recurrencia (solo al crear, solo en listas de cliente) */}

@@ -4,6 +4,7 @@ import { createRecurrenceSchema } from './recurrence.validators';
 export const createTaskSchema = z.object({
   title: z.string().min(1).max(500),
   description: z.string().max(5000).optional(),
+  startDate: z.string().datetime().optional(),
   dueDate: z.string().datetime().optional(),
   categoryId: z.string().cuid().optional(),
   listId: z.string().cuid().optional(),
@@ -20,6 +21,7 @@ export const createTaskSchema = z.object({
 export const updateTaskSchema = z.object({
   title: z.string().min(1).max(500).optional(),
   description: z.string().max(5000).nullable().optional(),
+  startDate: z.string().datetime().nullable().optional(),
   dueDate: z.string().datetime().nullable().optional(),
   categoryId: z.string().cuid().nullable().optional(),
   listId: z.string().cuid().nullable().optional(),

@@ -17,6 +17,7 @@ export interface Task {
     description: string | null;
     status: TaskStatus;
     priority: TaskPriority;
+    startDate: string | null;
     dueDate: string | null;
     completedAt: string | null;
     order: number;
@@ -59,6 +60,7 @@ export interface Task {
 export interface CreateTaskRequest {
     title: string;
     description?: string;
+    startDate?: string;
     dueDate?: string;
     categoryId?: string;
     listId?: string;
@@ -72,6 +74,7 @@ export interface CreateTaskRequest {
 export interface UpdateTaskRequest {
     title?: string;
     description?: string | null;
+    startDate?: string | null;
     dueDate?: string | null;
     categoryId?: string | null;
     listId?: string | null;

@@ -2,6 +2,7 @@ import { z } from 'zod';
 export declare const createTaskSchema: z.ZodObject<{
     title: z.ZodString;
     description: z.ZodOptional<z.ZodString>;
+    startDate: z.ZodOptional<z.ZodString>;
     dueDate: z.ZodOptional<z.ZodString>;
     categoryId: z.ZodOptional<z.ZodString>;
     listId: z.ZodOptional<z.ZodString>;
@@ -17,14 +18,14 @@ export declare const createTaskSchema: z.ZodObject<{
         startDate: z.ZodString;
         endDate: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
+        startDate: string;
         frequency: "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
         interval: number;
-        startDate: string;
         dayOfMonth?: number | undefined;
         endDate?: string | undefined;
     }, {
-        frequency: "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
         startDate: string;
+        frequency: "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
         interval?: number | undefined;
         dayOfMonth?: number | undefined;
         endDate?: string | undefined;
@@ -34,6 +35,7 @@ export declare const createTaskSchema: z.ZodObject<{
     title: string;
     dueDate?: string | undefined;
     description?: string | undefined;
+    startDate?: string | undefined;
     categoryId?: string | undefined;
     listId?: string | undefined;
     parentId?: string | undefined;
@@ -41,9 +43,9 @@ export declare const createTaskSchema: z.ZodObject<{
     assigneeIds?: string[] | undefined;
     isRecurring?: boolean | undefined;
     recurrence?: {
+        startDate: string;
         frequency: "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
         interval: number;
-        startDate: string;
         dayOfMonth?: number | undefined;
         endDate?: string | undefined;
     } | undefined;
@@ -52,6 +54,7 @@ export declare const createTaskSchema: z.ZodObject<{
     dueDate?: string | undefined;
     priority?: "NONE" | "LOW" | "MEDIUM" | "HIGH" | "URGENT" | undefined;
     description?: string | undefined;
+    startDate?: string | undefined;
     categoryId?: string | undefined;
     listId?: string | undefined;
     parentId?: string | undefined;
@@ -59,8 +62,8 @@ export declare const createTaskSchema: z.ZodObject<{
     assigneeIds?: string[] | undefined;
     isRecurring?: boolean | undefined;
     recurrence?: {
-        frequency: "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
         startDate: string;
+        frequency: "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
         interval?: number | undefined;
         dayOfMonth?: number | undefined;
         endDate?: string | undefined;
@@ -69,6 +72,7 @@ export declare const createTaskSchema: z.ZodObject<{
 export declare const updateTaskSchema: z.ZodObject<{
     title: z.ZodOptional<z.ZodString>;
     description: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    startDate: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     dueDate: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     categoryId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     listId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -80,6 +84,7 @@ export declare const updateTaskSchema: z.ZodObject<{
     priority?: "NONE" | "LOW" | "MEDIUM" | "HIGH" | "URGENT" | undefined;
     title?: string | undefined;
     description?: string | null | undefined;
+    startDate?: string | null | undefined;
     categoryId?: string | null | undefined;
     listId?: string | null | undefined;
     tagIds?: string[] | undefined;
@@ -89,6 +94,7 @@ export declare const updateTaskSchema: z.ZodObject<{
     priority?: "NONE" | "LOW" | "MEDIUM" | "HIGH" | "URGENT" | undefined;
     title?: string | undefined;
     description?: string | null | undefined;
+    startDate?: string | null | undefined;
     categoryId?: string | null | undefined;
     listId?: string | null | undefined;
     tagIds?: string[] | undefined;
@@ -119,12 +125,12 @@ export declare const taskFiltersSchema: z.ZodObject<{
     limit: number;
     priority?: "NONE" | "LOW" | "MEDIUM" | "HIGH" | "URGENT" | undefined;
     status?: string | undefined;
-    clientId?: string | undefined;
     categoryId?: string | undefined;
     listId?: string | undefined;
     parentId?: string | undefined;
     tagIds?: string | undefined;
     isRecurring?: "true" | "false" | undefined;
+    clientId?: string | undefined;
     search?: string | undefined;
     dueDateFrom?: string | undefined;
     dueDateTo?: string | undefined;
@@ -133,12 +139,12 @@ export declare const taskFiltersSchema: z.ZodObject<{
 }, {
     priority?: "NONE" | "LOW" | "MEDIUM" | "HIGH" | "URGENT" | undefined;
     status?: string | undefined;
-    clientId?: string | undefined;
     categoryId?: string | undefined;
     listId?: string | undefined;
     parentId?: string | undefined;
     tagIds?: string | undefined;
     isRecurring?: "true" | "false" | undefined;
+    clientId?: string | undefined;
     search?: string | undefined;
     dueDateFrom?: string | undefined;
     dueDateTo?: string | undefined;
@@ -152,9 +158,9 @@ export declare const taskFiltersSchema: z.ZodObject<{
 export declare const updateTaskStatusSchema: z.ZodObject<{
     status: z.ZodEnum<["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"]>;
 }, "strip", z.ZodTypeAny, {
-    status: "CANCELLED" | "PENDING" | "IN_PROGRESS" | "COMPLETED";
+    status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 }, {
-    status: "CANCELLED" | "PENDING" | "IN_PROGRESS" | "COMPLETED";
+    status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 }>;
 export declare const moveTaskSchema: z.ZodObject<{
     listId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
