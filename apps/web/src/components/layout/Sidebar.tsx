@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   CalendarDays,
   BarChart3,
-  UserCheck,
   Users,
   GitFork,
   GanttChartSquare,
@@ -148,11 +147,6 @@ export function Sidebar() {
           to="/my-tasks"
           icon={<User className="h-4 w-4" />}
           label="Mis tareas"
-        />
-        <NavItem
-          to="/assigned"
-          icon={<UserCheck className="h-4 w-4" />}
-          label="Asignadas a mí"
         />
         <NavItem
           to="/reports"

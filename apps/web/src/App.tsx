@@ -63,10 +63,7 @@ function App() {
             path="/my-tasks"
             element={<TasksPage listFilter="my-tasks" />}
           />
-          <Route
-            path="/assigned"
-            element={<TasksPage listFilter="assigned" />}
-          />
+          <Route path="/assigned" element={<Navigate to="/my-tasks" replace />} />
           <Route path="/lists/:id" element={<ListDetailPage />} />
           <Route path="/clients/:id" element={<ClientTasksPage />} />
           <Route path="/profile" element={<ProfilePage />} />
