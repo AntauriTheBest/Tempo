@@ -1,10 +1,8 @@
-# Guía de despliegue en servidor Linux
-
-Instrucciones para instalar la aplicación en un servidor Ubuntu 22.04 LTS con acceso solo por consola.
+# Guía de despliegue — Tempo (Ubuntu 22.04)
 
 ---
 
-## 1. Actualizar el servidor
+## 1. Preparar el servidor
 
 ```bash
 sudo apt update && sudo apt upgrade -y
@@ -37,6 +35,9 @@ GRANT ALL PRIVILEGES ON DATABASE tempo_prod TO tempo;
 EOF
 ```
 
+> **Nota:** En Ubuntu con PostgreSQL 16, el servicio real es `postgresql@16-main`.
+> Verificar con: `sudo systemctl status 'postgresql@*'`
+
 ---
 
 ## 4. Instalar PM2 y Nginx
@@ -58,22 +59,12 @@ sudo chown -R $USER:$USER tempo
 cd tempo
 ```
 
-O si subes el código desde tu PC con rsync:
-
-```bash
-# Ejecutar desde tu PC (Git Bash o WSL)
-rsync -avz --exclude node_modules --exclude .git \
-  "ruta/al/proyecto/" \
-  usuario@IP_SERVIDOR:/var/www/tempo/
-```
-
 ---
 
-## 6. Variables de entorno del API
+## 6. Variables de entorno de la API
 
 ```bash
-cd /var/www/tempo/apps/api
-nano .env
+nano /var/www/tempo/apps/api/.env
 ```
 
 Contenido:
@@ -88,8 +79,10 @@ JWT_REFRESH_EXPIRY=7d
 UPLOADS_DIR=/var/www/tempo/uploads
 MAX_FILE_SIZE_MB=10
 FRONTEND_URL=https://tudominio.com
+EMAIL_VERIFICATION_ENABLED=false
+SUPERADMIN_EMAIL=tu@email.com
 
-# Stripe (dejar vacío si no está configurado aún)
+# Stripe (dejar vacío si no está configurado)
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
 STRIPE_PRO_PRICE_ID=
@@ -97,7 +90,7 @@ STRIPE_SUCCESS_URL=
 STRIPE_CANCEL_URL=
 ```
 
-Generar un JWT_SECRET seguro:
+Generar JWT_SECRET seguro:
 
 ```bash
 node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
@@ -105,46 +98,37 @@ node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 
 ---
 
-## 7. Variables de entorno del frontend
+## 7. Instalar dependencias
 
 ```bash
-cd /var/www/tempo/apps/web
-nano .env.production
-```
-
-Contenido:
-
-```env
-VITE_API_URL=https://tudominio.com/api
+cd /var/www/tempo
+npm install
 ```
 
 ---
 
-## 8. Instalar dependencias y preparar la base de datos
+## 8. Aplicar schema de base de datos
 
 ```bash
-cd /var/www/tempo
-
-# Instalar dependencias del monorepo
-npm install
-
-# Generar cliente Prisma y aplicar schema
-cd apps/api
+cd /var/www/tempo/apps/api
 npx prisma generate
 npx prisma db push
-
-# Ejecutar seed (crea organización demo + usuario demo)
-npx tsx prisma/seed.ts
 ```
+
+> **Importante:** Ejecutar `prisma db push` en cada deploy que incluya cambios de schema.
 
 ---
 
-## 9. Compilar el frontend
+## 9. Compilar
 
 ```bash
 cd /var/www/tempo
+
+# API (TypeScript → CommonJS)
+npm run build --workspace=apps/api
+
+# Frontend (Vite)
 npm run build --workspace=apps/web
-# El output queda en apps/web/dist/
 ```
 
 ---
@@ -152,32 +136,22 @@ npm run build --workspace=apps/web
 ## 10. Iniciar la API con PM2
 
 ```bash
-# Crear archivo de configuración PM2
-cat > /var/www/tempo/ecosystem.config.js << 'EOF'
-module.exports = {
-  apps: [{
-    name: 'tempo-api',
-    cwd: '/var/www/tempo/apps/api',
-    script: 'npx',
-    args: 'tsx src/server.ts',
-    env: { NODE_ENV: 'production' },
-    restart_delay: 3000,
-    max_restarts: 10,
-  }]
-}
-EOF
-
-pm2 start /var/www/tempo/ecosystem.config.js
+# IMPORTANTE: --cwd debe apuntar a apps/api para que lea el .env
+pm2 delete api 2>/dev/null || true
+pm2 start /var/www/tempo/apps/api/dist/server.js \
+  --name api \
+  --cwd /var/www/tempo/apps/api
 pm2 save
 pm2 startup   # sigue las instrucciones que imprime
 ```
 
-Verificar que está corriendo:
+Verificar:
 
 ```bash
 pm2 status
-pm2 logs tempo-api --lines 20
-curl http://localhost:3001/api/health
+pm2 logs api --lines 20
+curl http://localhost:3001/api/auth/me
+# Debe devolver: {"success":false,"message":"Access token required"}
 ```
 
 ---
@@ -195,16 +169,13 @@ server {
     listen 80;
     server_name tudominio.com www.tudominio.com;
 
-    # Frontend (archivos estáticos)
     root /var/www/tempo/apps/web/dist;
     index index.html;
 
-    # Uploads
     location /uploads/ {
         alias /var/www/tempo/uploads/;
     }
 
-    # API → proxy al backend
     location /api/ {
         proxy_pass http://127.0.0.1:3001;
         proxy_http_version 1.1;
@@ -217,7 +188,6 @@ server {
         client_max_body_size 15M;
     }
 
-    # SPA fallback — todas las rutas van al index.html
     location / {
         try_files $uri $uri/ /index.html;
     }
@@ -226,13 +196,33 @@ server {
 
 ```bash
 sudo ln -s /etc/nginx/sites-available/tempo /etc/nginx/sites-enabled/
-sudo nginx -t          # verificar sintaxis
+sudo nginx -t
 sudo systemctl reload nginx
 ```
 
 ---
 
-## 12. SSL con Let's Encrypt (HTTPS)
+## 12. Carpeta de uploads
+
+```bash
+mkdir -p /var/www/tempo/uploads
+chmod 755 /var/www/tempo/uploads
+```
+
+---
+
+## 13. Firewall
+
+```bash
+sudo ufw allow 22
+sudo ufw allow 80
+sudo ufw allow 443
+sudo ufw enable
+```
+
+---
+
+## 14. SSL con Let's Encrypt
 
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
@@ -242,50 +232,67 @@ sudo systemctl reload nginx
 
 ---
 
-## 13. Carpeta de uploads
-
-```bash
-mkdir -p /var/www/tempo/uploads
-chmod 755 /var/www/tempo/uploads
-```
-
----
-
-## 14. Firewall
-
-```bash
-sudo ufw allow 22    # SSH
-sudo ufw allow 80    # HTTP
-sudo ufw allow 443   # HTTPS
-sudo ufw enable
-```
-
----
-
-## Verificación final
-
-```bash
-curl https://tudominio.com/api/health   # debe devolver { "status": "ok" }
-curl -I https://tudominio.com           # debe devolver 200
-pm2 logs tempo-api                  # logs en tiempo real
-```
-
----
-
-## Actualizaciones futuras
+## Actualizar en producción
 
 ```bash
 cd /var/www/tempo
-git pull
+
+# Si hay conflictos de archivos locales:
+git checkout -- apps/api/package.json package-lock.json
+
+git pull origin master
 npm install
+npm run build --workspace=apps/api
 npm run build --workspace=apps/web
-pm2 restart tempo-api
+
+# Si hubo cambios de schema de Prisma:
+cd apps/api && npx prisma db push && cd ../..
+
+pm2 restart api --update-env
+pm2 logs api --lines 15
 ```
 
-Si hubo cambios en el schema de Prisma:
+---
 
+## Solución de problemas frecuentes
+
+### Puerto 3001 ocupado
 ```bash
-cd apps/api
-npx prisma generate
+sudo fuser -k 3001/tcp
+pm2 restart api --update-env
+```
+
+### API no lee el .env
+```bash
+pm2 show api | grep cwd
+# Debe mostrar: /var/www/tempo/apps/api
+# Si no, recrear el proceso:
+pm2 delete api
+pm2 start /var/www/tempo/apps/api/dist/server.js --name api --cwd /var/www/tempo/apps/api
+pm2 save
+```
+
+### npm install falla con EOVERRIDE
+```bash
+git checkout -- package.json package-lock.json
+npm install
+```
+
+### No puede conectar a la base de datos
+```bash
+# Verificar que PostgreSQL está corriendo
+sudo systemctl status 'postgresql@*'
+
+# Probar conexión directa
+psql -h 127.0.0.1 -U tempo -d tempo_prod -c "SELECT 1"
+
+# Asegurarse de que DATABASE_URL usa 127.0.0.1, no localhost
+```
+
+### 500 en rutas nuevas (graph, team-dashboard)
+```bash
+# Probablemente falta ejecutar prisma db push
+cd /var/www/tempo/apps/api
 npx prisma db push
+pm2 restart api --update-env
 ```
