@@ -142,7 +142,7 @@ export function GanttPage() {
 
       setSaving(origin.taskId);
       try {
-        await apiClient.patch(`/tasks/${origin.taskId}`, {
+        await apiClient.put(`/tasks/${origin.taskId}`, {
           startDate: newStart.toISOString(),
           dueDate:   newEnd.toISOString(),
         });
