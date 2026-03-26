@@ -49,11 +49,11 @@ interface TeamDashboardData {
 }
 
 const PRIORITY_COLORS: Record<string, string> = {
-  URGENT: 'bg-red-100 text-red-700',
-  HIGH: 'bg-orange-100 text-orange-700',
-  MEDIUM: 'bg-yellow-100 text-yellow-700',
-  LOW: 'bg-blue-100 text-blue-700',
-  NONE: 'bg-gray-100 text-gray-600',
+  URGENT: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  HIGH:   'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+  MEDIUM: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+  LOW:    'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  NONE:   'bg-muted text-muted-foreground',
 };
 
 const PRIORITY_LABELS: Record<string, string> = {
@@ -66,13 +66,13 @@ function Avatar({ name, avatar, size = 8 }: { name: string; avatar?: string | nu
       <img
         src={avatar}
         alt={name}
-        className={`h-${size} w-${size} rounded-full object-cover ring-2 ring-white`}
+        className={`h-${size} w-${size} rounded-full object-cover ring-2 ring-background`}
       />
     );
   }
   return (
     <div
-      className={`h-${size} w-${size} rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-xs ring-2 ring-white`}
+      className={`h-${size} w-${size} rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-xs ring-2 ring-background`}
     >
       {name.charAt(0).toUpperCase()}
     </div>
@@ -118,33 +118,33 @@ export function TeamDashboardPage() {
           icon={<Activity className="h-5 w-5 text-blue-600" />}
           label="Total tareas"
           value={summary.total}
-          bg="bg-blue-50"
+          bg="bg-blue-100 dark:bg-blue-900/20"
         />
         <SummaryCard
-          icon={<CheckCircle2 className="h-5 w-5 text-green-600" />}
+          icon={<CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />}
           label="Completadas"
           value={summary.completed}
           sub={`${completionRate}% tasa`}
-          bg="bg-green-50"
+          bg="bg-green-100 dark:bg-green-900/20"
         />
         <SummaryCard
-          icon={<Clock className="h-5 w-5 text-purple-600" />}
+          icon={<Clock className="h-5 w-5 text-purple-600 dark:text-purple-400" />}
           label="En progreso"
           value={summary.inProgress}
-          bg="bg-purple-50"
+          bg="bg-purple-100 dark:bg-purple-900/20"
         />
         <SummaryCard
-          icon={<AlertTriangle className="h-5 w-5 text-red-600" />}
+          icon={<AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />}
           label="Vencidas"
           value={summary.overdue}
-          bg="bg-red-50"
+          bg="bg-red-100 dark:bg-red-900/20"
           highlight={summary.overdue > 0}
         />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* ── Workload table ──────────────────────────────── */}
-        <div className="lg:col-span-2 rounded-xl border bg-white shadow-sm overflow-hidden">
+        <div className="lg:col-span-2 rounded-xl border bg-card shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 border-b px-4 py-3">
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
             <h2 className="text-sm font-semibold">Carga de trabajo por miembro</h2>
@@ -163,7 +163,7 @@ export function TeamDashboardPage() {
                       <span className="text-[10px] rounded-full bg-primary/10 text-primary px-1.5 py-0.5 font-medium">Admin</span>
                     )}
                   </div>
-                  <div className="mt-1 h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
+                  <div className="mt-1 h-1.5 w-full rounded-full bg-muted overflow-hidden">
                     <div
                       className="h-full rounded-full bg-primary transition-all"
                       style={{ width: `${m.completionRate}%` }}
@@ -194,12 +194,12 @@ export function TeamDashboardPage() {
         {/* ── Right column ───────────────────────────────── */}
         <div className="space-y-6">
           {/* Overdue tasks */}
-          <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
+          <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
             <div className="flex items-center gap-2 border-b px-4 py-3">
               <AlertTriangle className="h-4 w-4 text-red-500" />
               <h2 className="text-sm font-semibold">Tareas vencidas</h2>
               {overdueTasks.length > 0 && (
-                <span className="ml-auto rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-600">
+                <span className="ml-auto rounded-full bg-red-100 dark:bg-red-900/30 px-2 py-0.5 text-xs font-semibold text-red-600 dark:text-red-400">
                   {overdueTasks.length}
                 </span>
               )}
@@ -233,7 +233,7 @@ export function TeamDashboardPage() {
           </div>
 
           {/* Recent activity */}
-          <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
+          <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
             <div className="flex items-center gap-2 border-b px-4 py-3">
               <CheckCircle2 className="h-4 w-4 text-green-500" />
               <h2 className="text-sm font-semibold">Completadas este mes</h2>
@@ -277,7 +277,7 @@ function SummaryCard({
   highlight?: boolean;
 }) {
   return (
-    <div className={`rounded-xl border bg-white p-4 shadow-sm ${highlight ? 'ring-2 ring-red-300' : ''}`}>
+    <div className={`rounded-xl border bg-card p-4 shadow-sm ${highlight ? 'ring-2 ring-red-400/60' : ''}`}>
       <div className={`mb-3 inline-flex rounded-lg p-2 ${bg}`}>{icon}</div>
       <p className="text-2xl font-extrabold">{value}</p>
       <p className="text-xs text-muted-foreground mt-0.5">{label}</p>

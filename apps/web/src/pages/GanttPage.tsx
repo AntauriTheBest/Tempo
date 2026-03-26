@@ -261,7 +261,7 @@ export function GanttPage() {
       style={{ userSelect: draggingId ? 'none' : undefined, cursor: draggingId ? 'grabbing' : undefined }}
     >
       {/* Toolbar */}
-      <div className="flex items-center justify-between border-b px-4 py-2 bg-white flex-shrink-0">
+      <div className="flex items-center justify-between border-b px-4 py-2 bg-background flex-shrink-0">
         <div className="flex items-center gap-3">
           <h1 className="text-base font-semibold">Diagrama de Gantt</h1>
           {!loading && (
@@ -297,14 +297,14 @@ export function GanttPage() {
         </div>
       ) : tasks.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center text-center">
-          <p className="font-medium text-gray-500">Sin tareas con fecha límite</p>
-          <p className="text-sm text-gray-400 mt-1">Asigna fechas límite a tus tareas para verlas aquí.</p>
+          <p className="font-medium text-muted-foreground">Sin tareas con fecha límite</p>
+          <p className="text-sm text-muted-foreground/60 mt-1">Asigna fechas límite a tus tareas para verlas aquí.</p>
         </div>
       ) : (
         <div className="flex flex-1 overflow-hidden">
           {/* Left labels */}
           <div className="flex-shrink-0 overflow-y-auto border-r" style={{ width: LABEL_W }}>
-            <div className="border-b bg-gray-50" style={{ height: 2 * ROW_H }} />
+            <div className="border-b bg-muted/50" style={{ height: 2 * ROW_H }} />
             {tasks.map((task) => (
               <div key={task.id} style={{ height: ROW_H }}
                 className={`flex items-center gap-2 border-b px-3 text-sm transition-colors ${hoveredTask === task.id ? 'bg-accent' : ''} ${saving === task.id ? 'opacity-60' : ''}`}
@@ -324,22 +324,22 @@ export function GanttPage() {
           <div ref={scrollRef} className="flex-1 overflow-auto">
             <div style={{ width: svgW, minWidth: '100%' }}>
               {/* Month header */}
-              <div className="flex border-b bg-gray-50 sticky top-0 z-10" style={{ height: ROW_H }}>
+              <div className="flex border-b bg-muted/50 sticky top-0 z-10" style={{ height: ROW_H }}>
                 {monthGroups.map((g) => (
-                  <div key={g.label} className="flex-shrink-0 border-r px-2 flex items-center text-xs font-semibold text-gray-600 capitalize" style={{ width: g.count * DAY_W }}>
+                  <div key={g.label} className="flex-shrink-0 border-r px-2 flex items-center text-xs font-semibold text-muted-foreground capitalize" style={{ width: g.count * DAY_W }}>
                     {g.label}
                   </div>
                 ))}
               </div>
 
               {/* Day header */}
-              <div className="flex border-b bg-gray-50 sticky top-[40px] z-10" style={{ height: ROW_H }}>
+              <div className="flex border-b bg-muted/50 sticky top-[40px] z-10" style={{ height: ROW_H }}>
                 {dateColumns.map((d) => {
                   const todayLine = isToday(d);
                   const weekend = d.getDay() === 0 || d.getDay() === 6;
                   return (
                     <div key={d.toISOString()} style={{ width: DAY_W }}
-                      className={`flex-shrink-0 border-r flex flex-col items-center justify-center text-xs ${todayLine ? 'bg-primary/10 font-bold text-primary' : weekend ? 'text-gray-400' : 'text-gray-500'}`}>
+                      className={`flex-shrink-0 border-r flex flex-col items-center justify-center text-xs ${todayLine ? 'bg-primary/10 font-bold text-primary' : weekend ? 'text-muted-foreground/50' : 'text-muted-foreground'}`}>
                       <span>{format(d, 'd')}</span>
                       <span className="text-[9px] uppercase">{format(d, 'EEE', { locale: es })}</span>
                     </div>
@@ -374,7 +374,7 @@ export function GanttPage() {
                     >
                       {/* Weekend shading */}
                       {dateColumns.map((d, i) =>
-                        weekend(d) ? <div key={i} className="absolute top-0 bottom-0 bg-gray-100/60" style={{ left: i * DAY_W, width: DAY_W }} /> : null
+                        weekend(d) ? <div key={i} className="absolute top-0 bottom-0 bg-muted/40" style={{ left: i * DAY_W, width: DAY_W }} /> : null
                       )}
 
                       {/* Bar */}
@@ -395,7 +395,7 @@ export function GanttPage() {
                       {/* Date tooltip during drag */}
                       {isDragging && bar && dragDayOffset !== 0 && (
                         <div
-                          className="absolute bottom-full mb-1 left-0 z-50 bg-gray-900 text-white text-[10px] rounded px-2 py-1 pointer-events-none whitespace-nowrap shadow"
+                          className="absolute bottom-full mb-1 left-0 z-50 bg-popover text-popover-foreground border text-[10px] rounded px-2 py-1 pointer-events-none whitespace-nowrap shadow"
                           style={{ left: Math.max(0, bar.left) }}
                         >
                           {format(previewStart, 'dd MMM', { locale: es })} → {format(previewEnd, 'dd MMM', { locale: es })}
@@ -435,7 +435,7 @@ export function GanttPage() {
       )}
 
       {/* Legend */}
-      <div className="flex items-center gap-4 border-t px-4 py-2 bg-white flex-shrink-0 flex-wrap">
+      <div className="flex items-center gap-4 border-t px-4 py-2 bg-background flex-shrink-0 flex-wrap">
         {Object.entries(STATUS_BAR_CLS).map(([s, cls]) => (
           <div key={s} className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <div className={`h-2.5 w-5 rounded-sm ${cls}`} />{STATUS_LABELS[s]}

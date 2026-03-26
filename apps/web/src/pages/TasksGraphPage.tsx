@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { apiClient } from '../services/api-client';
 import { dependenciesService } from '../services/dependencies.service';
 import { toast } from 'sonner';
@@ -33,11 +33,18 @@ const COL_GAP = 280;
 const ROW_GAP = 90;
 const PAD = 60;
 
-const STATUS_COLORS: Record<string, { fill: string; stroke: string; text: string }> = {
+const STATUS_COLORS_LIGHT: Record<string, { fill: string; stroke: string; text: string }> = {
   PENDING:     { fill: '#f1f5f9', stroke: '#94a3b8', text: '#475569' },
   IN_PROGRESS: { fill: '#dbeafe', stroke: '#3b82f6', text: '#1d4ed8' },
   COMPLETED:   { fill: '#dcfce7', stroke: '#22c55e', text: '#15803d' },
   CANCELLED:   { fill: '#fee2e2', stroke: '#ef4444', text: '#b91c1c' },
+};
+
+const STATUS_COLORS_DARK: Record<string, { fill: string; stroke: string; text: string }> = {
+  PENDING:     { fill: '#1e293b', stroke: '#64748b', text: '#94a3b8' },
+  IN_PROGRESS: { fill: '#1e3a5f', stroke: '#3b82f6', text: '#93c5fd' },
+  COMPLETED:   { fill: '#14532d', stroke: '#22c55e', text: '#86efac' },
+  CANCELLED:   { fill: '#450a0a', stroke: '#ef4444', text: '#fca5a5' },
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -98,6 +105,22 @@ function tempEdgePath(x1: number, y1: number, x2: number, y2: number) {
   return `M ${x1} ${y1} C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}`;
 }
 
+// ── Dark mode hook ────────────────────────────────────────────────────────────
+
+function useIsDark() {
+  const [isDark, setIsDark] = useState(() =>
+    document.documentElement.classList.contains('dark')
+  );
+  useEffect(() => {
+    const obs = new MutationObserver(() =>
+      setIsDark(document.documentElement.classList.contains('dark'))
+    );
+    obs.observe(document.documentElement, { attributeFilter: ['class'] });
+    return () => obs.disconnect();
+  }, []);
+  return isDark;
+}
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 export function TasksGraphPage() {
@@ -112,6 +135,12 @@ export function TasksGraphPage() {
   const [connectSource, setConnectSource] = useState<GraphNode | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 }); // SVG coords
   const [connectingEdge, setConnectingEdge] = useState(false);
+
+  const isDark = useIsDark();
+  const STATUS_COLORS = useMemo(
+    () => isDark ? STATUS_COLORS_DARK : STATUS_COLORS_LIGHT,
+    [isDark]
+  );
 
   const svgRef = useRef<SVGSVGElement>(null);
   const isPanning = useRef(false);
@@ -246,7 +275,7 @@ export function TasksGraphPage() {
   return (
     <div className="flex h-full flex-col">
       {/* Toolbar */}
-      <div className="flex items-center justify-between border-b px-4 py-2 bg-white flex-shrink-0">
+      <div className="flex items-center justify-between border-b px-4 py-2 bg-background flex-shrink-0">
         <div className="flex items-center gap-3">
           <h1 className="text-base font-semibold">Grafo de dependencias</h1>
           {!loading && (
@@ -293,27 +322,29 @@ export function TasksGraphPage() {
       {/* Hint bar when in connect mode */}
       {connectMode && (
         <div className={`flex items-center gap-2 px-4 py-1.5 text-xs border-b transition-colors ${
-          connectSource ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'
+          connectSource
+            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+            : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
         }`}>
           <Link2 className="h-3.5 w-3.5 flex-shrink-0" />
           {connectSource
-            ? <>Origen: <strong>"{connectSource.title}"</strong>. Ahora haz click en la tarea que quedará bloqueada. <kbd className="rounded bg-white/60 px-1 border">ESC</kbd> para cancelar.</>
-            : <>Haz click en la tarea que debe completarse <strong>primero</strong> (origen). <kbd className="rounded bg-white/60 px-1 border">ESC</kbd> para salir.</>
+            ? <>Origen: <strong>"{connectSource.title}"</strong>. Ahora haz click en la tarea que quedará bloqueada. <kbd className="rounded bg-background/60 px-1 border">ESC</kbd> para cancelar.</>
+            : <>Haz click en la tarea que debe completarse <strong>primero</strong> (origen). <kbd className="rounded bg-background/60 px-1 border">ESC</kbd> para salir.</>
           }
         </div>
       )}
 
       {/* Canvas */}
-      <div className="relative flex-1 overflow-hidden bg-gray-50">
+      <div className="relative flex-1 overflow-hidden bg-muted/30">
         {loading ? (
           <div className="flex h-full items-center justify-center">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           </div>
         ) : nodes.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
-            <Info className="h-10 w-10 text-gray-300 mb-3" />
-            <p className="font-medium text-gray-500">Sin tareas disponibles</p>
-            <p className="text-sm text-gray-400 mt-1">Crea tareas y añade dependencias para visualizarlas aquí.</p>
+            <Info className="h-10 w-10 text-muted-foreground/30 mb-3" />
+            <p className="font-medium text-muted-foreground">Sin tareas disponibles</p>
+            <p className="text-sm text-muted-foreground/60 mt-1">Crea tareas y añade dependencias para visualizarlas aquí.</p>
           </div>
         ) : (
           <svg
@@ -340,7 +371,7 @@ export function TasksGraphPage() {
                 <path d="M0,0 L0,6 L8,3 z" fill="#f59e0b" />
               </marker>
               <pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse">
-                <circle cx="1" cy="1" r="1" fill="#e2e8f0" />
+                <circle cx="1" cy="1" r="1" fill={isDark ? '#334155' : '#e2e8f0'} />
               </pattern>
             </defs>
 
@@ -380,7 +411,7 @@ export function TasksGraphPage() {
                     />
                     {/* Delete button on hover — shown via group hover */}
                     <g className="opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
-                      <circle cx={midX} cy={midY} r={8} fill="white" stroke="#ef4444" strokeWidth={1.5} />
+                      <circle cx={midX} cy={midY} r={8} fill={isDark ? '#1e293b' : 'white'} stroke="#ef4444" strokeWidth={1.5} />
                       <text x={midX} y={midY} textAnchor="middle" dominantBaseline="middle" fontSize={10} fill="#ef4444">✕</text>
                     </g>
                   </g>
@@ -497,7 +528,7 @@ export function TasksGraphPage() {
 
         {/* Info panel for selected node (non-connect mode) */}
         {selected && !connectMode && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-xl border bg-white shadow-lg px-4 py-3 text-sm max-w-sm w-full">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-xl border bg-card shadow-lg px-4 py-3 text-sm max-w-sm w-full">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="font-semibold truncate">{selected.title}</p>
@@ -520,7 +551,7 @@ export function TasksGraphPage() {
                 >
                   <Link2 className="h-4 w-4" />
                 </button>
-                <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600">
+                <button onClick={() => setSelected(null)} className="text-muted-foreground hover:text-foreground">
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -530,7 +561,7 @@ export function TasksGraphPage() {
 
         {/* Instructions panel */}
         {!connectMode && edges.length > 0 && !selected && (
-          <div className="absolute bottom-4 right-4 rounded-lg bg-white/90 border px-3 py-2 text-xs text-muted-foreground space-y-0.5">
+          <div className="absolute bottom-4 right-4 rounded-lg bg-card/90 border px-3 py-2 text-xs text-muted-foreground space-y-0.5">
             <p>• Click en nodo → detalles</p>
             <p>• Click en arista → eliminar dependencia</p>
             <p>• <strong>Conectar</strong> → crear dependencia</p>
@@ -539,7 +570,7 @@ export function TasksGraphPage() {
         )}
 
         {/* Zoom indicator */}
-        <div className="absolute top-3 right-3 rounded-md bg-white/80 border px-2 py-1 text-xs text-muted-foreground">
+        <div className="absolute top-3 right-3 rounded-md bg-card/80 border px-2 py-1 text-xs text-muted-foreground">
           {Math.round(transform.scale * 100)}%
         </div>
       </div>
