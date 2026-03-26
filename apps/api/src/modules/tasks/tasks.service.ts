@@ -668,6 +668,7 @@ export async function getGraph(userId: string, organizationId: string, role?: st
         title: true,
         status: true,
         priority: true,
+        startDate: true,
         dueDate: true,
         createdAt: true,
         listId: true,
